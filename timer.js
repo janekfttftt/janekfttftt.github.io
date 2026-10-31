@@ -1,9 +1,11 @@
-// Kolejka timerów: odpalają się jeden po drugim, po każdym krótki sygnał.
+// Kolejka timerów: odpalają się jeden po drugim, po każdym gra wybrany sygnał.
 (function () {
   "use strict";
 
   const KEY = "timers_v1";
+  const SOUND_KEY = "timer_sound_v1";
   const MAX_TOTAL = 359999; // 99:59:59 w sekundach
+  const MAX_SOUND_LEN = 30; // sekundy
 
   const $ = (id) => document.getElementById(id);
   const pad = (n) => String(n).padStart(2, "0");
@@ -34,7 +36,141 @@
   const queue = $("queue");
   const form = $("add-form");
 
-  // ---------- Stan ----------
+  const soundSel = $("sound-select");
+  const lenRange = $("len-range");
+  const lenLabel = $("len-label");
+  const playBtn = $("sound-play");
+  const soundFill = $("sound-fill");
+
+  // ---------- Dźwięki (syntezowane w przeglądarce, bez plików) ----------
+  // cycle(tone, t): rysuje jeden "obieg" dźwięku od czasu t; obiegi powtarzają się co `period` s,
+  // aż do wybranej długości. tone(start, czas, częstotliwość, typ, głośność, [częstotliwość_końcowa]).
+  const bell = (tone, t, f, len, vol) => {
+    [[1, 1, 1], [2.01, 0.5, 0.65], [2.76, 0.35, 0.45], [5.4, 0.18, 0.25]].forEach((p) => {
+      tone(t, len * p[2], f * p[0], "sine", vol * p[1]);
+    });
+  };
+
+  const SOUNDS = [
+    { id: "pip", name: "Pip", period: 0.5, cycle: (tone, t) => tone(t, 0.18, 880, "sine", 0.35) },
+    { id: "bell", name: "Dzwonek", period: 1.8, cycle: (tone, t) => bell(tone, t, 1046.5, 1.6, 0.3) },
+    { id: "gong", name: "Gong", period: 3.2, cycle: (tone, t) => bell(tone, t, 196, 3.0, 0.45) },
+    {
+      id: "alarm", name: "Budzik", period: 1.0,
+      cycle: (tone, t) => { for (let i = 0; i < 4; i++) tone(t + i * 0.13, 0.08, 1400, "square", 0.12); },
+    },
+    { id: "sonar", name: "Sonar", period: 1.5, cycle: (tone, t) => tone(t, 0.7, 1300, "sine", 0.35, 900) },
+    {
+      id: "chime", name: "Kurant", period: 2.0,
+      cycle: (tone, t) => { [523.25, 659.25, 783.99].forEach((f, i) => tone(t + i * 0.25, 0.6, f, "sine", 0.3)); },
+    },
+  ];
+
+  const settings = loadSettings(); // { sound, len }
+
+  function loadSettings() {
+    const s = { sound: "pip", len: 1 };
+    try {
+      const raw = JSON.parse(localStorage.getItem(SOUND_KEY));
+      if (raw && SOUNDS.some((x) => x.id === raw.sound)) s.sound = raw.sound;
+      if (raw && Number.isFinite(raw.len)) s.len = Math.min(MAX_SOUND_LEN, Math.max(1, Math.round(raw.len)));
+    } catch (e) { /* zostaną domyślne */ }
+    return s;
+  }
+
+  function saveSettings() {
+    try { localStorage.setItem(SOUND_KEY, JSON.stringify(settings)); } catch (e) { /* trudno */ }
+  }
+
+  let audioCtx = null;
+  let playing = null; // { master, nodes, timer, startedAt, lenMs }
+
+  function ensureAudio() {
+    try {
+      if (!audioCtx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) audioCtx = new AC();
+      }
+      if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+    } catch (e) { /* brak dźwięku */ }
+  }
+
+  function uiSound() {
+    playBtn.textContent = playing ? "Stop" : "Odtwórz";
+    if (!playing) soundFill.style.width = "0%";
+  }
+
+  function soundProgress() {
+    if (!playing) return;
+    const elapsed = performance.now() - playing.startedAt;
+    if (elapsed >= playing.lenMs + 150) {
+      stopSound();
+      return;
+    }
+    soundFill.style.width = Math.min(100, Math.max(0, (elapsed / playing.lenMs) * 100)) + "%";
+  }
+
+  function stopSound() {
+    const p = playing;
+    playing = null;
+    if (p) {
+      clearInterval(p.timer);
+      try {
+        const now = audioCtx.currentTime;
+        p.master.gain.cancelScheduledValues(now);
+        p.master.gain.setValueAtTime(p.master.gain.value, now);
+        p.master.gain.linearRampToValueAtTime(0, now + 0.02);
+        p.nodes.forEach((n) => { try { n.stop(now + 0.03); } catch (e) { /* już zakończony */ } });
+      } catch (e) { /* brak dźwięku */ }
+      setTimeout(() => { try { p.master.disconnect(); } catch (e) { /* ok */ } }, 150);
+    }
+    uiSound();
+  }
+
+  function playSound() {
+    ensureAudio();
+    if (!audioCtx) return;
+    stopSound();
+    try {
+      const snd = SOUNDS.find((s) => s.id === settings.sound) || SOUNDS[0];
+      const seconds = settings.len;
+      const t0 = audioCtx.currentTime + 0.03;
+      const end = t0 + seconds;
+      const master = audioCtx.createGain();
+      master.connect(audioCtx.destination);
+      const nodes = [];
+
+      const tone = (start, dur, freq, type, vol, freqEnd) => {
+        dur = Math.min(dur, end - start); // nic nie wychodzi poza wybraną długość
+        if (dur < 0.03) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        const attack = Math.min(0.01, dur / 3);
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, start);
+        if (freqEnd) osc.frequency.exponentialRampToValueAtTime(freqEnd, start + dur);
+        gain.gain.setValueAtTime(0.0001, start);
+        gain.gain.exponentialRampToValueAtTime(vol, start + attack);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+        osc.connect(gain);
+        gain.connect(master);
+        osc.start(start);
+        osc.stop(start + dur + 0.02);
+        nodes.push(osc);
+      };
+
+      for (let t = t0; t < end; t += snd.period) snd.cycle(tone, t);
+
+      playing = { master, nodes, timer: null, startedAt: performance.now() + 30, lenMs: seconds * 1000 };
+      playing.timer = setInterval(soundProgress, 100);
+      soundProgress();
+    } catch (e) {
+      playing = null;
+    }
+    uiSound();
+  }
+
+  // ---------- Stan timerów ----------
   let timers = load(); // [{ id, desc, total (sekundy), status: wait | run | done }]
   let currentId = null;
   let running = false;
@@ -65,41 +201,6 @@
   }
 
   const cur = () => timers.find((t) => t.id === currentId) || null;
-
-  // ---------- Dźwięk ----------
-  let audioCtx = null;
-
-  function ensureAudio() {
-    try {
-      if (!audioCtx) {
-        const AC = window.AudioContext || window.webkitAudioContext;
-        if (AC) audioCtx = new AC();
-      }
-      if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
-    } catch (e) { /* brak dźwięku */ }
-  }
-
-  function beep(count, freq) {
-    if (!audioCtx || count <= 0) return;
-    try {
-      if (audioCtx.state === "suspended") audioCtx.resume();
-      const t0 = audioCtx.currentTime + 0.02;
-      for (let i = 0; i < count; i++) {
-        const s = t0 + i * 0.28;
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = "sine";
-        osc.frequency.value = freq;
-        gain.gain.setValueAtTime(0.0001, s);
-        gain.gain.exponentialRampToValueAtTime(0.35, s + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.0001, s + 0.18);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start(s);
-        osc.stop(s + 0.2);
-      }
-    } catch (e) { /* brak dźwięku */ }
-  }
 
   // ---------- Odliczanie ----------
   // Tykanie w Web Workerze, bo zwykłe timery bywają mocno spowalniane w karcie w tle.
@@ -143,14 +244,14 @@
     const idx = timers.findIndex((x) => x.id === currentId);
     const next = timers.slice(idx + 1).find((x) => x.status === "wait");
     if (next) {
-      if (withSound) beep(2, 880);
+      if (withSound) playSound();
       begin(next);
     } else {
       currentId = null;
       running = false;
       remaining = 0;
       stopTicker();
-      if (withSound) beep(3, 1175);
+      if (withSound) playSound();
     }
     renderQueue();
     update();
@@ -193,6 +294,7 @@
 
   function onReset() {
     stopTicker();
+    stopSound();
     running = false;
     currentId = null;
     remaining = 0;
@@ -209,6 +311,7 @@
     if (!timers.length) return;
     if (!window.confirm("Usunąć wszystkie timery z listy?")) return;
     stopTicker();
+    stopSound();
     running = false;
     currentId = null;
     remaining = 0;
@@ -260,6 +363,35 @@
     save();
     renderQueue();
     update();
+  });
+
+  // ---------- Ustawienia dźwięku ----------
+  SOUNDS.forEach((s) => {
+    const o = el("option", null, s.name);
+    o.value = s.id;
+    soundSel.appendChild(o);
+  });
+  soundSel.value = settings.sound;
+  lenRange.max = String(MAX_SOUND_LEN);
+  lenRange.value = String(settings.len);
+  lenLabel.textContent = settings.len + " s";
+
+  // po wybraniu dźwięku od razu go odtwarzamy
+  soundSel.addEventListener("change", () => {
+    settings.sound = soundSel.value;
+    saveSettings();
+    playSound();
+  });
+
+  lenRange.addEventListener("input", () => {
+    settings.len = Number(lenRange.value);
+    lenLabel.textContent = settings.len + " s";
+  });
+  lenRange.addEventListener("change", saveSettings);
+
+  playBtn.addEventListener("click", () => {
+    if (playing) stopSound();
+    else playSound();
   });
 
   // ---------- Rysowanie ----------
@@ -321,4 +453,5 @@
 
   renderQueue();
   update();
+  uiSound();
 })();

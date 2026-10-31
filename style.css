@@ -135,6 +135,25 @@ input:focus-visible,
 }
 .warn-text { color: #f0b429; min-height: 1.4em; margin: 0; }
 
+select {
+  background: var(--card);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font: inherit;
+  min-width: 0;
+}
+select:focus-visible,
+input[type="range"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+input[type="range"] { accent-color: var(--accent); width: 100%; margin: 8px 0 0; }
+
+.sound-bar { height: 6px; margin: 2px 0 12px; }
+.sound-bar .bar-fill { transition: none; }
+
 /* ---------- Karty ---------- */
 .card {
   padding: 16px;

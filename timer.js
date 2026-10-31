@@ -447,6 +447,8 @@
 
     startBtn.textContent = running ? "Pauza" : t ? "Wznów" : "Start";
     startBtn.disabled = !t && !nextWait;
+    $("fs-toggle").textContent = startBtn.textContent;
+    $("fs-toggle").disabled = startBtn.disabled;
     skipBtn.disabled = !t;
     resetBtn.disabled = !timers.some((x) => x.status !== "wait");
   }

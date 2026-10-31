@@ -289,5 +289,93 @@
     fileInput.value = "";
   });
 
+  // ---------- Pełny ekran: 12 nawyków na ekran (4×3, a w pionie 3×4) ----------
+  const FS_WEEKS = 13;         // ile tygodni pokazuje miniatura w kafelku
+  const FS_PER_PAGE = 12;
+  const FS_ROTATE_MS = 10000;  // co ile sekund zmienia się strona (gdy nawyków jest więcej niż 12)
+
+  const fsOverlay = document.getElementById("fs-habits");
+  const fsGrid = document.getElementById("fs-habits-grid");
+  const fsPager = document.getElementById("fs-pager");
+  const fsNext = document.getElementById("fs-next");
+  let fsPage = 0;
+  let fsRotate = null;
+  let fsRefresh = null;
+
+  const fsPages = () => Math.max(1, Math.ceil(habits.length / FS_PER_PAGE));
+
+  function fsMini(h) {
+    const grid = el("div", "fs-mini");
+    const t = today();
+    const tKey = dayKey(t);
+    const first = addDays(t, -((t.getDay() + 6) % 7) - (FS_WEEKS - 1) * 7);
+    for (let i = 0; i < FS_WEEKS * 7; i++) {
+      const date = addDays(first, i);
+      if (date > t) {
+        grid.appendChild(el("span", "fs-cell blank"));
+        continue;
+      }
+      const k = dayKey(date);
+      grid.appendChild(el("span", "fs-cell" + (h.done[k] ? " on" : "") + (k === tKey ? " today" : "")));
+    }
+    return grid;
+  }
+
+  function fsTile(h) {
+    const s = stats(h);
+    const tile = el("article", "fs-tile");
+    const streak = el("div", "fs-streak");
+    streak.append(
+      el("span", "fs-num", String(s.streak)),
+      el("span", "fs-lbl", s.streak === 1 ? "dzień z rzędu" : "dni z rzędu")
+    );
+    tile.append(el("h3", null, h.name), streak, fsMini(h));
+    return tile;
+  }
+
+  function renderFs() {
+    const pages = fsPages();
+    if (fsPage >= pages) fsPage = 0;
+    fsOverlay.classList.toggle("is-empty", habits.length === 0);
+    fsGrid.textContent = "";
+    habits
+      .slice(fsPage * FS_PER_PAGE, (fsPage + 1) * FS_PER_PAGE)
+      .forEach((h) => fsGrid.appendChild(fsTile(h)));
+    fsPager.textContent = pages > 1 ? "strona " + (fsPage + 1) + " / " + pages : "";
+    fsNext.hidden = pages <= 1;
+  }
+
+  function startRotate() {
+    clearInterval(fsRotate);
+    fsRotate = setInterval(() => { if (fsPages() > 1) fsGo(1); }, FS_ROTATE_MS);
+  }
+
+  function fsGo(delta) {
+    const pages = fsPages();
+    fsPage = (fsPage + delta + pages) % pages;
+    renderFs();
+    startRotate();
+  }
+
+  document.getElementById("fs-btn").addEventListener("click", () => {
+    fsPage = 0;
+    renderFs();
+    Fullscreen.open(fsOverlay, () => {
+      clearInterval(fsRotate);
+      clearInterval(fsRefresh);
+    });
+    startRotate();
+    clearInterval(fsRefresh);
+    fsRefresh = setInterval(renderFs, 60000); // odświeżanie np. po północy
+  });
+
+  fsNext.addEventListener("click", () => fsGo(1));
+
+  document.addEventListener("keydown", (e) => {
+    if (!Fullscreen.isOpen()) return;
+    if (e.key === "ArrowRight" || e.key === "PageDown") fsGo(1);
+    else if (e.key === "ArrowLeft" || e.key === "PageUp") fsGo(-1);
+  });
+
   render();
 })();

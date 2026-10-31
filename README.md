@@ -6,6 +6,7 @@ Prosta strona osobista (HTML + CSS + JS), hostowana na GitHub Pages.
 - `index.html` – strona główna (zegar, kontakt).
 - `timer.html` + `timer.js` – kolejka timerów z sygnałem dźwiękowym.
 - `habits.html` + `habits.js` – śledzenie nawyków (siatka kwadratów jak na GitHubie).
+- `fullscreen.js` – wspólna obsługa trybu pełnoekranowego (timer i nawyki).
 - `style.css` – wygląd (kolory w zmiennych na górze pliku).
 - `script.js` – zegar i rok w stopce (wspólne dla wszystkich stron).
 

@@ -242,6 +242,15 @@
     update();
   });
 
+  // Gotowy zestaw: 40 s ćwiczeń + 20 s przerwy (każde kliknięcie dodaje kolejną rundę)
+  $("preset-btn").addEventListener("click", () => {
+    timers.push({ id: newId(), desc: "ćwiczenia", total: 40, status: "wait" });
+    timers.push({ id: newId(), desc: "przerwa", total: 20, status: "wait" });
+    save();
+    renderQueue();
+    update();
+  });
+
   queue.addEventListener("click", (e) => {
     const btn = e.target.closest(".q-remove");
     if (!btn || btn.disabled) return;

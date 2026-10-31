@@ -14,20 +14,43 @@
 
     <nav>
       <a href="index.html">start</a> //
-      <a href="projects.html">projekty</a> //
-      <a href="habits.html">nawyki</a> //
-      <a href="https://github.com/TWOJ-LOGIN">github</a>
+      <a href="timer.html">timer</a> //
+      <a href="habits.html">nawyki</a>
     </nav>
 
-    <p class="muted">Liczniki dni od startu każdego nawyku. Aktualizują się same.</p>
+    <p class="muted small">
+      Dodaj nawyk i klikaj kwadraty dni, w których go zrobiłeś. Wszystko zapisuje się
+      automatycznie w Twojej przeglądarce – nikt inny nie widzi Twoich nawyków.
+    </p>
 
-    <!-- Liczniki generują się z listy HABITS w pliku data.js -->
+    <p id="storage-warn" class="warn" hidden>
+      Ta przeglądarka blokuje zapis danych, więc nawyki znikną po zamknięciu strony.
+      Użyj przycisku „Eksportuj”, żeby zrobić kopię.
+    </p>
+
+    <form id="add-form" class="row">
+      <label class="field grow">
+        <span class="small muted">nowy nawyk</span>
+        <input id="habit-name" type="text" maxlength="60" placeholder="np. nauka, bieganie, czytanie" autocomplete="off">
+      </label>
+      <button class="btn" type="submit">Dodaj</button>
+    </form>
+
     <section id="habits"></section>
+
+    <div class="row">
+      <button class="btn ghost" id="export-btn" type="button">Eksportuj (kopia)</button>
+      <button class="btn ghost" id="import-btn" type="button">Importuj</button>
+      <input id="import-file" type="file" accept="application/json,.json" hidden>
+    </div>
+    <p class="muted small">
+      Eksport zapisuje plik z Twoimi nawykami – możesz go wczytać na innym urządzeniu lub w innej przeglądarce.
+    </p>
 
     <footer class="muted">© <span id="year"></span> Janek</footer>
   </main>
 
-  <script src="data.js"></script>
   <script src="script.js"></script>
+  <script src="habits.js"></script>
 </body>
 </html>

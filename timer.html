@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Timer – Janek</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <h1>「TIMER」</h1>
+
+    <p class="muted">czas w warszawie – <span id="clock">--:--:--</span></p>
+
+    <nav>
+      <a href="index.html">start</a> //
+      <a href="timer.html">timer</a> //
+      <a href="habits.html">nawyki</a>
+    </nav>
+
+    <section class="now">
+      <div class="muted small" id="now-label">gotowy</div>
+      <div class="now-time" id="now-time">00:00</div>
+    </section>
+
+    <div class="row">
+      <button class="btn" id="start-btn" type="button">Start</button>
+      <button class="btn ghost" id="skip-btn" type="button">Pomiń</button>
+      <button class="btn ghost" id="reset-btn" type="button">Reset</button>
+    </div>
+
+    <h2>dodaj timer</h2>
+    <form id="add-form" class="row">
+      <label class="field">
+        <span class="small muted">min</span>
+        <input id="in-min" type="number" min="0" value="5" inputmode="numeric">
+      </label>
+      <label class="field">
+        <span class="small muted">sek</span>
+        <input id="in-sec" type="number" min="0" value="0" inputmode="numeric">
+      </label>
+      <label class="field grow">
+        <span class="small muted">opis (opcjonalnie)</span>
+        <input id="in-desc" type="text" maxlength="80" placeholder="np. nauka, przerwa" autocomplete="off">
+      </label>
+      <button class="btn" type="submit">Dodaj</button>
+    </form>
+    <p id="form-msg" class="small warn-text" role="status"></p>
+
+    <h2>kolejka</h2>
+    <p id="queue-empty" class="muted small">Brak timerów. Dodaj pierwszy powyżej.</p>
+    <ol id="queue" class="queue"></ol>
+    <div class="row">
+      <button class="btn ghost" id="clear-btn" type="button">Wyczyść listę</button>
+    </div>
+
+    <p class="muted small">
+      Timery uruchamiają się jeden po drugim, a po każdym rozlega się krótki sygnał.
+      Zostaw kartę ze stroną otwartą (może być w tle) – po zamknięciu karty lub uśpieniu telefonu
+      odliczanie się zatrzyma. Lista zapisuje się w przeglądarce.
+    </p>
+
+    <footer class="muted">© <span id="year"></span> Janek</footer>
+  </main>
+
+  <script src="script.js"></script>
+  <script src="timer.js"></script>
+</body>
+</html>

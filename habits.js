@@ -1,11 +1,13 @@
 // Aplikacja do nawyków: dane zapisują się automatycznie w localStorage
 // przeglądarki (każdy odwiedzający ma własne, prywatne nawyki).
+// Zawiera też widok pełnoekranowy (12 nawyków na stronę).
 (function () {
   "use strict";
 
+  const tr = I18N.t;
+
   const KEY = "habits_v1";
   const WEEKS = 53;
-  const MONTHS = ["sty", "lut", "mar", "kwi", "maj", "cze", "lip", "sie", "wrz", "paź", "lis", "gru"];
   const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
   const root = document.getElementById("habits");
@@ -23,7 +25,7 @@
   const dayKey = (d) => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
   const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
   const today = () => { const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); };
-  const dayWord = (n) => (n === 1 ? "dzień" : "dni");
+  const dayWord = (n) => I18N.plural(n, "day");
 
   function newId() {
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -91,6 +93,11 @@
     return { total, streak };
   }
 
+  function statsText(h) {
+    const s = stats(h);
+    return tr("habits.stats", { s: s.streak, sw: dayWord(s.streak), t: s.total, tw: dayWord(s.total) });
+  }
+
   function refreshCard(h, card, k) {
     if (k) {
       const cell = card.querySelector('.cell[data-key="' + k + '"]');
@@ -100,24 +107,25 @@
         cell.setAttribute("aria-pressed", String(on));
       }
     }
-    const s = stats(h);
-    card.querySelector('[data-role="stats"]').textContent =
-      "seria: " + s.streak + " " + dayWord(s.streak) + " · razem: " + s.total + " " + dayWord(s.total);
+    card.querySelector('[data-role="stats"]').textContent = statsText(h);
 
     const doneToday = !!h.done[dayKey(today())];
     const tb = card.querySelector('[data-role="today"]');
     tb.classList.toggle("active", doneToday);
-    tb.textContent = doneToday ? "Dziś ✓" : "Dziś";
+    tb.textContent = tr(doneToday ? "habits.today.done" : "habits.today");
   }
 
   // ---------- Rysowanie ----------
   function buildCard(h) {
+    const months = tr("months").split(",");
+    const wdays = tr("weekdays").split(",");
+
     const card = el("article", "card habit-card");
     card.dataset.id = h.id;
 
     const head = el("div", "habit-head");
     const actions = el("div", "habit-actions");
-    [["today", "Dziś"], ["rename", "Zmień nazwę"], ["delete", "Usuń"]].forEach(([role, label]) => {
+    [["today", ""], ["rename", tr("habits.rename")], ["delete", tr("habits.delete")]].forEach(([role, label]) => {
       const b = el("button", "btn ghost small-btn", label);
       b.type = "button";
       b.dataset.role = role;
@@ -130,10 +138,10 @@
 
     const heat = el("div", "heat");
     const weekdays = el("div", "weekdays");
-    ["Pn", "", "Śr", "", "Pt", "", ""].forEach((t) => weekdays.appendChild(el("span", null, t)));
+    wdays.forEach((w) => weekdays.appendChild(el("span", null, w)));
 
     const scroll = el("div", "scroll");
-    const months = el("div", "months");
+    const monthsEl = el("div", "months");
     const grid = el("div", "grid");
 
     const t = today();
@@ -147,9 +155,9 @@
       const month = monday.getMonth();
       const showLabel = w === 0 ? addDays(monday, 7).getMonth() === month : month !== prevMonth;
       if (showLabel) {
-        const lab = el("span", null, MONTHS[month]);
+        const lab = el("span", null, months[month]);
         lab.style.gridColumn = String(w + 1);
-        months.appendChild(lab);
+        monthsEl.appendChild(lab);
       }
       prevMonth = month;
 
@@ -173,7 +181,7 @@
       }
     }
 
-    scroll.append(months, grid);
+    scroll.append(monthsEl, grid);
     heat.append(weekdays, scroll);
     card.append(head, statsEl, heat);
     refreshCard(h, card, null);
@@ -183,7 +191,7 @@
   function render() {
     root.textContent = "";
     if (!habits.length) {
-      root.appendChild(el("p", "muted", "Nie masz jeszcze żadnych nawyków. Dodaj pierwszy powyżej."));
+      root.appendChild(el("p", "muted", tr("habits.empty")));
       return;
     }
     habits.forEach((h) => root.appendChild(buildCard(h)));
@@ -200,7 +208,7 @@
   }
 
   function rename(h) {
-    const n = window.prompt("Nowa nazwa nawyku:", h.name);
+    const n = window.prompt(tr("habits.prompt.rename"), h.name);
     if (n === null) return;
     const name = n.trim().slice(0, 60);
     if (!name) return;
@@ -210,7 +218,7 @@
   }
 
   function remove(h) {
-    if (!window.confirm("Usunąć nawyk „" + h.name + "” razem z całą historią?")) return;
+    if (!window.confirm(tr("habits.confirm.delete", { name: h.name }))) return;
     habits = habits.filter((x) => x !== h);
     save();
     render();
@@ -269,12 +277,12 @@
         const data = JSON.parse(reader.result);
         const imported = sanitize(Array.isArray(data) ? data : data.habits);
         if (!imported.length) {
-          window.alert("W pliku nie znaleziono żadnych nawyków.");
+          window.alert(tr("habits.alert.none"));
           return;
         }
         if (
           habits.length &&
-          !window.confirm("Zastąpić obecne nawyki (" + habits.length + ") nawykami z pliku (" + imported.length + ")?")
+          !window.confirm(tr("habits.confirm.replace", { a: habits.length, b: imported.length }))
         ) {
           return;
         }
@@ -282,7 +290,7 @@
         save();
         render();
       } catch (err) {
-        window.alert("Nie udało się wczytać pliku.");
+        window.alert(tr("habits.alert.fail"));
       }
     };
     reader.readAsText(file);
@@ -298,6 +306,7 @@
   const fsGrid = document.getElementById("fs-habits-grid");
   const fsPager = document.getElementById("fs-pager");
   const fsNext = document.getElementById("fs-next");
+  const fsEmpty = document.getElementById("fs-empty");
   let fsPage = 0;
   let fsRotate = null;
   let fsRefresh = null;
@@ -325,10 +334,7 @@
     const s = stats(h);
     const tile = el("article", "fs-tile");
     const streak = el("div", "fs-streak");
-    streak.append(
-      el("span", "fs-num", String(s.streak)),
-      el("span", "fs-lbl", s.streak === 1 ? "dzień z rzędu" : "dni z rzędu")
-    );
+    streak.append(el("span", "fs-num", String(s.streak)), el("span", "fs-lbl", tr(s.streak === 1 ? "fs.streak.one" : "fs.streak.many")));
     tile.append(el("h3", null, h.name), streak, fsMini(h));
     return tile;
   }
@@ -337,11 +343,13 @@
     const pages = fsPages();
     if (fsPage >= pages) fsPage = 0;
     fsOverlay.classList.toggle("is-empty", habits.length === 0);
+    fsEmpty.textContent = tr("fs.empty");
     fsGrid.textContent = "";
     habits
       .slice(fsPage * FS_PER_PAGE, (fsPage + 1) * FS_PER_PAGE)
       .forEach((h) => fsGrid.appendChild(fsTile(h)));
-    fsPager.textContent = pages > 1 ? "strona " + (fsPage + 1) + " / " + pages : "";
+    fsPager.textContent = pages > 1 ? tr("fs.page", { a: fsPage + 1, b: pages }) : "";
+    fsNext.textContent = tr("fs.next");
     fsNext.hidden = pages <= 1;
   }
 
@@ -377,5 +385,12 @@
     else if (e.key === "ArrowLeft" || e.key === "PageUp") fsGo(-1);
   });
 
+  // ---------- Zmiana języka ----------
+  document.addEventListener("langchange", () => {
+    render();
+    renderFs();
+  });
+
   render();
+  renderFs();
 })();

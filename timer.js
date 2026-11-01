@@ -1,14 +1,21 @@
 // Kolejka timerów: odpalają się jeden po drugim, po każdym gra wybrany sygnał.
+// Zawiera też: gotowe zestawy, wybór dźwięku, długość/głośność/wyciszenie i widok pełnoekranowy.
 (function () {
   "use strict";
 
+  const tr = I18N.t;
+
   const KEY = "timers_v1";
-  const SOUND_KEY = "timer_sound_v1";
-  const MAX_TOTAL = 359999; // 99:59:59 w sekundach
-  const MAX_SOUND_LEN = 30; // sekundy
+  const SOUND_KEY = "timer_sound_v2";
+  const MAX_TOTAL = 359999;  // 99:59:59 w sekundach
+  const MAX_SOUND_LEN = 30;  // sekundy
+  const MASTER_MAX = 0.85;   // głośność przy suwaku na 100%
+  const DEFAULTS = { sound: "alarm", len: 10, vol: 80, muted: false };
+  const PRESET_KEYS = ["exercise", "study", "rest"];
 
   const $ = (id) => document.getElementById(id);
   const pad = (n) => String(n).padStart(2, "0");
+  const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
 
   function el(tag, cls, text) {
     const e = document.createElement(tag);
@@ -39,6 +46,9 @@
   const soundSel = $("sound-select");
   const lenRange = $("len-range");
   const lenLabel = $("len-label");
+  const volRange = $("vol-range");
+  const volLabel = $("vol-label");
+  const muteBtn = $("mute-btn");
   const playBtn = $("sound-play");
   const soundFill = $("sound-fill");
 
@@ -52,28 +62,33 @@
   };
 
   const SOUNDS = [
-    { id: "pip", name: "Pip", period: 0.5, cycle: (tone, t) => tone(t, 0.18, 880, "sine", 0.35) },
-    { id: "bell", name: "Dzwonek", period: 1.8, cycle: (tone, t) => bell(tone, t, 1046.5, 1.6, 0.3) },
-    { id: "gong", name: "Gong", period: 3.2, cycle: (tone, t) => bell(tone, t, 196, 3.0, 0.45) },
+    { id: "pip", key: "s.pip", period: 0.5, cycle: (tone, t) => tone(t, 0.18, 880, "sine", 0.35) },
+    { id: "bell", key: "s.bell", period: 1.8, cycle: (tone, t) => bell(tone, t, 1046.5, 1.6, 0.3) },
+    { id: "gong", key: "s.gong", period: 3.2, cycle: (tone, t) => bell(tone, t, 196, 3.0, 0.45) },
     {
-      id: "alarm", name: "Budzik", period: 1.0,
+      id: "alarm", key: "s.alarm", period: 1.0,
       cycle: (tone, t) => { for (let i = 0; i < 4; i++) tone(t + i * 0.13, 0.08, 1400, "square", 0.12); },
     },
-    { id: "sonar", name: "Sonar", period: 1.5, cycle: (tone, t) => tone(t, 0.7, 1300, "sine", 0.35, 900) },
+    { id: "sonar", key: "s.sonar", period: 1.5, cycle: (tone, t) => tone(t, 0.7, 1300, "sine", 0.35, 900) },
     {
-      id: "chime", name: "Kurant", period: 2.0,
+      id: "chime", key: "s.chime", period: 2.0,
       cycle: (tone, t) => { [523.25, 659.25, 783.99].forEach((f, i) => tone(t + i * 0.25, 0.6, f, "sine", 0.3)); },
     },
   ];
 
-  const settings = loadSettings(); // { sound, len }
+  // ---------- Ustawienia dźwięku (zapisywane w przeglądarce) ----------
+  const settings = loadSettings(); // { sound, len, vol, muted }
 
   function loadSettings() {
-    const s = { sound: "pip", len: 1 };
+    const s = Object.assign({}, DEFAULTS);
     try {
       const raw = JSON.parse(localStorage.getItem(SOUND_KEY));
-      if (raw && SOUNDS.some((x) => x.id === raw.sound)) s.sound = raw.sound;
-      if (raw && Number.isFinite(raw.len)) s.len = Math.min(MAX_SOUND_LEN, Math.max(1, Math.round(raw.len)));
+      if (raw) {
+        if (SOUNDS.some((x) => x.id === raw.sound)) s.sound = raw.sound;
+        if (Number.isFinite(raw.len)) s.len = clamp(Math.round(raw.len), 1, MAX_SOUND_LEN);
+        if (Number.isFinite(raw.vol)) s.vol = clamp(Math.round(raw.vol), 0, 100);
+        if (typeof raw.muted === "boolean") s.muted = raw.muted;
+      }
     } catch (e) { /* zostaną domyślne */ }
     return s;
   }
@@ -81,6 +96,9 @@
   function saveSettings() {
     try { localStorage.setItem(SOUND_KEY, JSON.stringify(settings)); } catch (e) { /* trudno */ }
   }
+
+  // suwak 0–100% → głośność (kwadrat, żeby regulacja była naturalna dla ucha)
+  const gainNow = () => (settings.muted ? 0 : MASTER_MAX * Math.pow(settings.vol / 100, 2));
 
   let audioCtx = null;
   let playing = null; // { master, nodes, timer, startedAt, lenMs }
@@ -95,9 +113,30 @@
     } catch (e) { /* brak dźwięku */ }
   }
 
-  function uiSound() {
-    playBtn.textContent = playing ? "Stop" : "Odtwórz";
+  function updateSoundUi() {
+    lenLabel.textContent = settings.len + " s";
+    volLabel.textContent = settings.muted ? tr("sound.muted") : settings.vol + "%";
+    muteBtn.textContent = tr(settings.muted ? "sound.unmute" : "sound.mute");
+    muteBtn.setAttribute("aria-pressed", String(settings.muted));
+    playBtn.textContent = tr(playing ? "sound.stop" : "sound.play");
     if (!playing) soundFill.style.width = "0%";
+  }
+
+  function fillSoundOptions() {
+    soundSel.textContent = "";
+    SOUNDS.forEach((s) => {
+      const o = el("option", null, tr(s.key));
+      o.value = s.id;
+      soundSel.appendChild(o);
+    });
+    soundSel.value = settings.sound;
+  }
+
+  function applyVolume() {
+    if (!playing || !audioCtx) return;
+    try {
+      playing.master.gain.setTargetAtTime(gainNow(), audioCtx.currentTime, 0.02);
+    } catch (e) { /* brak dźwięku */ }
   }
 
   function soundProgress() {
@@ -124,7 +163,7 @@
       } catch (e) { /* brak dźwięku */ }
       setTimeout(() => { try { p.master.disconnect(); } catch (e) { /* ok */ } }, 150);
     }
-    uiSound();
+    updateSoundUi();
   }
 
   function playSound() {
@@ -137,6 +176,7 @@
       const t0 = audioCtx.currentTime + 0.03;
       const end = t0 + seconds;
       const master = audioCtx.createGain();
+      master.gain.value = gainNow();
       master.connect(audioCtx.destination);
       const nodes = [];
 
@@ -167,11 +207,13 @@
     } catch (e) {
       playing = null;
     }
-    uiSound();
+    updateSoundUi();
   }
 
   // ---------- Stan timerów ----------
-  let timers = load(); // [{ id, desc, total (sekundy), status: wait | run | done }]
+  // timers: [{ id, desc, key, total (sekundy), status: wait | run | done }]
+  // `key` (exercise | study | rest) to opis z gotowego zestawu – tłumaczy się przy zmianie języka.
+  let timers = load();
   let currentId = null;
   let running = false;
   let endAt = 0;      // znacznik czasu końca (gdy running)
@@ -186,6 +228,7 @@
         .map((t) => ({
           id: newId(),
           desc: typeof t.desc === "string" ? t.desc.slice(0, 80) : "",
+          key: PRESET_KEYS.indexOf(t.key) >= 0 ? t.key : "",
           total: Math.min(MAX_TOTAL, Math.floor(t.total)),
           status: "wait",
         }));
@@ -196,11 +239,15 @@
 
   function save() {
     try {
-      localStorage.setItem(KEY, JSON.stringify(timers.map((t) => ({ desc: t.desc, total: t.total }))));
+      localStorage.setItem(
+        KEY,
+        JSON.stringify(timers.map((t) => ({ desc: t.desc, key: t.key || undefined, total: t.total })))
+      );
     } catch (e) { /* brak zapisu – trudno */ }
   }
 
   const cur = () => timers.find((t) => t.id === currentId) || null;
+  const label = (t) => (t.key ? tr("desc." + t.key) : t.desc);
 
   // ---------- Odliczanie ----------
   // Tykanie w Web Workerze, bo zwykłe timery bywają mocno spowalniane w karcie w tle.
@@ -309,7 +356,7 @@
 
   clearBtn.addEventListener("click", () => {
     if (!timers.length) return;
-    if (!window.confirm("Usunąć wszystkie timery z listy?")) return;
+    if (!window.confirm(tr("queue.clear.confirm"))) return;
     stopTicker();
     stopSound();
     running = false;
@@ -335,24 +382,30 @@
     const sec = Math.floor(Number($("in-sec").value) || 0);
     const total = Math.min(MAX_TOTAL, Math.max(0, min) * 60 + Math.max(0, sec));
     if (total <= 0) {
-      flash("Ustaw czas dłuższy niż 0.");
+      flash(tr("timer.err.zero"));
       return;
     }
-    timers.push({ id: newId(), desc: $("in-desc").value.trim().slice(0, 80), total, status: "wait" });
+    timers.push({ id: newId(), desc: $("in-desc").value.trim().slice(0, 80), key: "", total, status: "wait" });
     $("in-desc").value = "";
     save();
     renderQueue();
     update();
   });
 
-  // Gotowy zestaw: 40 s ćwiczeń + 20 s przerwy (każde kliknięcie dodaje kolejną rundę)
-  $("preset-btn").addEventListener("click", () => {
-    timers.push({ id: newId(), desc: "ćwiczenia", total: 40, status: "wait" });
-    timers.push({ id: newId(), desc: "przerwa", total: 20, status: "wait" });
+  // Gotowe zestawy – każde kliknięcie dodaje kolejną rundę na koniec kolejki.
+  // Chcesz własny zestaw? Dodaj przycisk w timer.html i wywołanie addPreset([[opis, sekundy], ...]) poniżej.
+  function addPreset(items) {
+    items.forEach((it) => {
+      timers.push({ id: newId(), desc: "", key: it[0], total: it[1], status: "wait" });
+    });
     save();
     renderQueue();
     update();
-  });
+  }
+
+  $("preset-s25").addEventListener("click", () => addPreset([["study", 25 * 60], ["rest", 5 * 60]]));
+  $("preset-s50").addEventListener("click", () => addPreset([["study", 50 * 60], ["rest", 10 * 60]]));
+  $("preset-ex").addEventListener("click", () => addPreset([["exercise", 40], ["rest", 20]]));
 
   queue.addEventListener("click", (e) => {
     const btn = e.target.closest(".q-remove");
@@ -365,16 +418,12 @@
     update();
   });
 
-  // ---------- Ustawienia dźwięku ----------
-  SOUNDS.forEach((s) => {
-    const o = el("option", null, s.name);
-    o.value = s.id;
-    soundSel.appendChild(o);
-  });
-  soundSel.value = settings.sound;
+  // ---------- Ustawienia dźwięku: obsługa ----------
+  fillSoundOptions();
   lenRange.max = String(MAX_SOUND_LEN);
   lenRange.value = String(settings.len);
-  lenLabel.textContent = settings.len + " s";
+  volRange.value = String(settings.vol);
+  updateSoundUi();
 
   // po wybraniu dźwięku od razu go odtwarzamy
   soundSel.addEventListener("change", () => {
@@ -385,9 +434,24 @@
 
   lenRange.addEventListener("input", () => {
     settings.len = Number(lenRange.value);
-    lenLabel.textContent = settings.len + " s";
+    updateSoundUi();
   });
   lenRange.addEventListener("change", saveSettings);
+
+  volRange.addEventListener("input", () => {
+    settings.vol = Number(volRange.value);
+    if (settings.vol > 0 && settings.muted) settings.muted = false; // ruszenie suwaka włącza dźwięk
+    updateSoundUi();
+    applyVolume();
+  });
+  volRange.addEventListener("change", saveSettings);
+
+  muteBtn.addEventListener("click", () => {
+    settings.muted = !settings.muted;
+    saveSettings();
+    updateSoundUi();
+    applyVolume();
+  });
 
   playBtn.addEventListener("click", () => {
     if (playing) stopSound();
@@ -403,12 +467,13 @@
       const li = el("li", "q-item " + t.status);
       li.dataset.id = t.id;
 
+      const d = label(t);
       const top = el("div", "q-top");
-      const desc = el("span", "q-desc" + (t.desc ? "" : " muted"), t.desc || "bez opisu");
+      const desc = el("span", "q-desc" + (d ? "" : " muted"), d || tr("timer.nodesc"));
       const time = el("span", "q-time", t.status === "done" ? "✓" : fmt(t.total * 1000));
       const rm = el("button", "q-remove", "×");
       rm.type = "button";
-      rm.setAttribute("aria-label", "Usuń timer");
+      rm.setAttribute("aria-label", tr("queue.remove"));
       rm.disabled = t.id === currentId;
       top.append(el("span", "q-idx", String(i + 1)), desc, time, rm);
 
@@ -425,35 +490,83 @@
   function update() {
     const t = cur();
     const nextWait = timers.find((x) => x.status === "wait");
+    let shown;
 
     if (t) {
       const left = running ? Math.max(0, endAt - Date.now()) : remaining;
-      $("now-label").textContent = (running ? "" : "pauza · ") + (t.desc || "bez opisu");
-      $("now-time").textContent = fmt(left);
-      document.title = fmt(left) + " · Timer";
+      $("now-label").textContent = (running ? "" : tr("timer.paused") + " · ") + (label(t) || tr("timer.nodesc"));
+      shown = fmt(left);
+      document.title = shown + " · Timer";
 
       const li = queue.querySelector('[data-id="' + t.id + '"]');
       if (li) {
-        li.querySelector(".q-time").textContent = fmt(left);
+        li.querySelector(".q-time").textContent = shown;
         li.querySelector(".bar-fill").style.width =
           Math.min(100, Math.max(0, (1 - left / (t.total * 1000)) * 100)) + "%";
       }
     } else {
       const allDone = timers.length > 0 && !nextWait;
-      $("now-label").textContent = allDone ? "wszystko gotowe – kliknij Reset, żeby zacząć od nowa" : "gotowy";
-      $("now-time").textContent = nextWait ? fmt(nextWait.total * 1000) : "00:00";
-      document.title = "Timer – Janek";
+      $("now-label").textContent = tr(allDone ? "timer.alldone" : "timer.ready");
+      shown = nextWait ? fmt(nextWait.total * 1000) : "00:00";
+      document.title = tr("title.timer");
     }
+    $("now-time").textContent = shown;
 
-    startBtn.textContent = running ? "Pauza" : t ? "Wznów" : "Start";
+    startBtn.textContent = tr(running ? "btn.pause" : t ? "btn.resume" : "btn.start");
     startBtn.disabled = !t && !nextWait;
-    $("fs-toggle").textContent = startBtn.textContent;
-    $("fs-toggle").disabled = startBtn.disabled;
     skipBtn.disabled = !t;
     resetBtn.disabled = !timers.some((x) => x.status !== "wait");
+
+    // widok pełnoekranowy: sam czas (bez opisu)
+    $("fs-time").textContent = shown;
+    $("fs-time").classList.toggle("long", shown.length > 5);
+    $("fs-timer").classList.toggle("paused", !!t && !running);
+    $("fs-toggle").textContent = startBtn.textContent;
+    $("fs-toggle").disabled = startBtn.disabled;
   }
+
+  // ---------- Pełny ekran: czas + kółko ----------
+  // Kółko robi pełny obrót w 1/10 czasu bieżącego timera (np. 40 s → obrót co 4 s).
+  const fsOverlay = $("fs-timer");
+  const ringRot = $("ring-rot");
+  let rafId = null;
+
+  function ringAngle() {
+    const t = cur();
+    if (!t) return 0;
+    const left = running ? Math.max(0, endAt - Date.now()) : remaining;
+    const elapsed = t.total * 1000 - left;
+    const period = t.total * 100; // 1/10 czasu timera w ms
+    return ((elapsed % period) / period) * 360;
+  }
+
+  function frame() {
+    rafId = null;
+    if (!Fullscreen.isOpen()) return;
+    ringRot.setAttribute("transform", "rotate(" + ringAngle().toFixed(2) + " 50 50)");
+    rafId = requestAnimationFrame(frame);
+  }
+
+  $("fs-btn").addEventListener("click", () => {
+    ensureAudio(); // kliknięcie to dobry moment na odblokowanie dźwięku
+    Fullscreen.open(fsOverlay, () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      rafId = null;
+    });
+    update();
+    if (rafId === null) rafId = requestAnimationFrame(frame);
+  });
+
+  $("fs-toggle").addEventListener("click", onStartPause);
+
+  // ---------- Zmiana języka ----------
+  document.addEventListener("langchange", () => {
+    fillSoundOptions();
+    updateSoundUi();
+    renderQueue();
+    update();
+  });
 
   renderQueue();
   update();
-  uiSound();
 })();

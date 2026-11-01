@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="pl" data-title="title.habits">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,53 +8,73 @@
 </head>
 <body>
   <main>
-    <h1>「NAWYKI」</h1>
+    <h1>「<span data-i18n="h.habits">NAWYKI</span>」</h1>
 
-    <p class="muted">czas w warszawie – <span id="clock">--:--:--</span></p>
+    <p class="muted"><span data-i18n="clock.label">czas w warszawie</span> – <span id="clock">--:--:--</span></p>
 
-    <nav>
-      <a href="index.html">start</a> //
-      <a href="timer.html">timer</a> //
-      <a href="habits.html">nawyki</a>
-    </nav>
+    <div class="topbar">
+      <nav>
+        <a href="index.html" data-i18n="nav.start">start</a> //
+        <a href="timer.html" data-i18n="nav.timer">timer</a> //
+        <a href="habits.html" data-i18n="nav.habits">nawyki</a>
+      </nav>
+      <div class="lang" role="group" data-i18n-aria="lang.aria" aria-label="język">
+        <button type="button" data-lang="pl" aria-pressed="true" data-i18n="lang.pl">pol</button> //
+        <button type="button" data-lang="en" aria-pressed="false" data-i18n="lang.en">ang</button>
+      </div>
+    </div>
 
-    <p class="muted small">
+    <p class="muted small" data-i18n="habits.intro">
       Dodaj nawyk i klikaj kwadraty dni, w których go zrobiłeś. Wszystko zapisuje się
       automatycznie w Twojej przeglądarce – nikt inny nie widzi Twoich nawyków.
     </p>
 
-    <p id="storage-warn" class="warn" hidden>
+    <p id="storage-warn" class="warn" hidden data-i18n="habits.warn">
       Ta przeglądarka blokuje zapis danych, więc nawyki znikną po zamknięciu strony.
       Użyj przycisku „Eksportuj”, żeby zrobić kopię.
     </p>
 
     <form id="add-form" class="row">
       <label class="field grow">
-        <span class="small muted">nowy nawyk</span>
-        <input id="habit-name" type="text" maxlength="60" placeholder="np. nauka, bieganie, czytanie" autocomplete="off">
+        <span class="small muted" data-i18n="habits.new">nowy nawyk</span>
+        <input id="habit-name" type="text" maxlength="60" placeholder="np. nauka, bieganie, czytanie"
+               data-i18n-placeholder="habits.new.ph" autocomplete="off">
       </label>
-      <button class="btn" type="submit">Dodaj</button>
+      <button class="btn" type="submit" data-i18n="btn.add">Dodaj</button>
     </form>
 
     <div class="row">
-      <button class="btn ghost" id="fs-btn" type="button">Pełny ekran</button>
+      <button class="btn ghost" id="fs-btn" type="button" data-i18n="btn.fullscreen">Pełny ekran</button>
     </div>
 
     <section id="habits"></section>
 
     <div class="row">
-      <button class="btn ghost" id="export-btn" type="button">Eksportuj (kopia)</button>
-      <button class="btn ghost" id="import-btn" type="button">Importuj</button>
+      <button class="btn ghost" id="export-btn" type="button" data-i18n="habits.export">Eksportuj (kopia)</button>
+      <button class="btn ghost" id="import-btn" type="button" data-i18n="habits.import">Importuj</button>
       <input id="import-file" type="file" accept="application/json,.json" hidden>
     </div>
-    <p class="muted small">
+    <p class="muted small" data-i18n="habits.exportnote">
       Eksport zapisuje plik z Twoimi nawykami – możesz go wczytać na innym urządzeniu lub w innej przeglądarce.
     </p>
 
     <footer class="muted">© <span id="year"></span> Janek</footer>
   </main>
 
+  <!-- Pełny ekran: 12 nawyków na stronę (4×3, w pionie 3×4) -->
+  <div id="fs-habits" class="fs-overlay" hidden>
+    <div class="fs-controls">
+      <span class="fs-pager" id="fs-pager"></span>
+      <button class="btn ghost" id="fs-next" type="button" hidden>Dalej ›</button>
+      <button class="fs-exit" type="button" data-i18n-aria="fs.exit" aria-label="Zamknij pełny ekran">×</button>
+    </div>
+    <div class="fs-habits-grid" id="fs-habits-grid"></div>
+    <p class="fs-empty" id="fs-empty">Nie masz jeszcze nawyków – dodaj je na stronie.</p>
+  </div>
+
+  <script src="i18n.js"></script>
   <script src="script.js"></script>
+  <script src="fullscreen.js"></script>
   <script src="habits.js"></script>
 </body>
 </html>

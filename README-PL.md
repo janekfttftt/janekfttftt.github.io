@@ -40,3 +40,9 @@ Jeśli timer lub nawyki nie działają, sprawdź w narzędziach deweloperskich p
 ## Benchmark zadań
 
 Drugi plik do pobrania, `benchmark-zadania-python.zip`, zawiera niezależny program konsolowy opisany w `README-BENCHMARK.md`. Nie jest częścią strony i można go uruchamiać osobno.
+
+## Zakładka Benchmark
+
+Menu zawiera teraz zakładkę `benchmark.html`. Wpisz dane wejściowe jako JSON, umieść ciało funkcji JavaScript w polach A i B (zmienna `input` zawiera dane), wybierz liczbę powtórzeń i uruchom pomiar. Wyniki są sprawdzane pod kątem zgodności; raport podaje medianę, minimum i maksimum czasu wykonania kodu. Każda próba działa w osobnej ramce z limitem czasu, a skrypty w ramce nie mogą wykonywać żądań sieciowych według jej polityki CSP. Nie wklejaj kodu, któremu nie ufasz.
+
+Nowe pliki: `benchmark.html` to interfejs zakładki, a `benchmark-page.js` obsługuje pomiar. Menu z linkiem do zakładki jest też na stronach startowej, timera i nawyków.

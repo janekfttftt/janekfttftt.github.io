@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pl" data-title="title.benchmark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Benchmark – Janek</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <h1>「BENCHMARK」</h1>
+    <p class="muted">Wpisz dwa warianty kodu JavaScript i porównaj czas działania na tych samych danych.</p>
+    <div class="topbar">
+      <nav>
+        <a href="index.html" data-i18n="nav.start">start</a> //
+        <a href="timer.html" data-i18n="nav.timer">timer</a> //
+        <a href="habits.html" data-i18n="nav.habits">nawyki</a> //
+        <a href="benchmark.html">benchmark</a>
+      </nav>
+      <div class="lang" role="group" data-i18n-aria="lang.aria" aria-label="język">
+        <button type="button" data-lang="pl" aria-pressed="true" data-i18n="lang.pl">pol</button> //
+        <button type="button" data-lang="en" aria-pressed="false" data-i18n="lang.en">ang</button>
+      </div>
+    </div>
+
+    <label class="field grow benchmark-input">
+      <span>Dane wejściowe w formacie JSON (np. liczba `100000` albo tablica `[1,2,3]`)</span>
+      <textarea id="bench-input" rows="2">100000</textarea>
+    </label>
+    <div class="benchmark-grid">
+      <label class="field grow">
+        <span>Wariant A — wpisz ciało funkcji; dane otrzymasz w zmiennej <code>input</code></span>
+        <textarea id="bench-a" rows="12" spellcheck="false">let suma = 0;
+for (let i = 1; i &lt;= input; i++) suma += i;
+return suma;</textarea>
+      </label>
+      <label class="field grow">
+        <span>Wariant B — możesz zmienić sposób obliczania</span>
+        <textarea id="bench-b" rows="12" spellcheck="false">return input * (input + 1) / 2;</textarea>
+      </label>
+    </div>
+    <div class="row">
+      <label class="field">
+        <span>Liczba powtórzeń</span>
+        <input id="bench-reps" type="number" min="1" max="100" value="10">
+      </label>
+      <button class="btn" id="bench-run" type="button">Uruchom pomiar</button>
+    </div>
+    <p class="muted small">Kod działa w osobnej, ograniczonej ramce strony. Każde wykonanie ma limit 2 sekund. Nie wklejaj kodu, któremu nie ufasz.</p>
+    <section id="bench-results" class="card" aria-live="polite">Wyniki pojawią się tutaj.</section>
+    <footer class="muted">© <span id="year"></span> Janek</footer>
+  </main>
+  <script src="i18n.js"></script>
+  <script src="script.js"></script>
+  <script src="benchmark-page.js"></script>
+</body>
+</html>
+

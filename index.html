@@ -5,30 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Janek</title>
   <meta name="description" content="Strona osobista Janka.">
-  <link rel="stylesheet" href="style.css?v=3">
-  <script>
-    // Diagnostyka: gdy plik się nie wczyta albo skrypt się wysypie, na górze pojawi się czerwony pasek z opisem.
-    (function () {
-      function show(msg) {
-        function add() {
-          var d = document.createElement("div");
-          d.style.cssText = "position:fixed;left:0;right:0;top:0;z-index:2000;background:#5a1d1d;color:#fff;padding:10px 16px;font:14px/1.4 monospace;cursor:pointer";
-          d.textContent = msg + " (kliknij, żeby zamknąć)";
-          d.onclick = function () { d.remove(); };
-          document.body.appendChild(d);
-        }
-        if (document.body) add(); else document.addEventListener("DOMContentLoaded", add);
-      }
-      window.addEventListener("error", function (e) {
-        var t = e.target;
-        if (t && t !== window && (t.tagName === "SCRIPT" || t.tagName === "LINK")) {
-          show("Nie załadował się plik: " + (t.getAttribute("src") || t.getAttribute("href")) + " – sprawdź, czy leży w tym samym folderze co strona.");
-        } else if (!t || t === window) {
-          show("Błąd w skrypcie: " + e.message + (e.filename ? " [" + e.filename.split("/").pop().split("?")[0] + ":" + e.lineno + "]" : ""));
-        }
-      }, true);
-    })();
-  </script>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <main>
@@ -48,13 +25,10 @@
       </div>
     </div>
 
-    <!-- Zdjęcie: plik zdjecie.jpg w tym samym folderze co index.html. Żeby je zmienić, podmień ten plik. -->
     <figure class="photo">
-      <img src="zdjecie.jpg" width="1536" height="936"
+      <img src="assets/kensington.jpg" width="1536" height="936"
            alt="Jasna kamienna rzeźba w kształcie łuku, na której siedzi ptak, na tle zachodu słońca nad parkiem"
-           data-i18n-alt="photo.alt"
-           onerror="this.parentNode.className='photo missing'">
-      <div class="photo-missing" data-i18n="photo.missing">Brak zdjęcia – wrzuć plik zdjecie.jpg do folderu ze stroną (obok index.html).</div>
+           data-i18n-alt="photo.alt">
       <figcaption>London, Kensington Gardens</figcaption>
     </figure>
 
@@ -66,6 +40,7 @@
     <footer class="muted">© <span id="year"></span> Janek</footer>
   </main>
 
-  <script src="script.js?v=3"></script>
+  <script src="i18n.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>

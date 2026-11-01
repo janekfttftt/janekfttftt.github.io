@@ -4,30 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Timer – Janek</title>
-  <link rel="stylesheet" href="style.css?v=3">
-  <script>
-    // Diagnostyka: gdy plik się nie wczyta albo skrypt się wysypie, na górze pojawi się czerwony pasek z opisem.
-    (function () {
-      function show(msg) {
-        function add() {
-          var d = document.createElement("div");
-          d.style.cssText = "position:fixed;left:0;right:0;top:0;z-index:2000;background:#5a1d1d;color:#fff;padding:10px 16px;font:14px/1.4 monospace;cursor:pointer";
-          d.textContent = msg + " (kliknij, żeby zamknąć)";
-          d.onclick = function () { d.remove(); };
-          document.body.appendChild(d);
-        }
-        if (document.body) add(); else document.addEventListener("DOMContentLoaded", add);
-      }
-      window.addEventListener("error", function (e) {
-        var t = e.target;
-        if (t && t !== window && (t.tagName === "SCRIPT" || t.tagName === "LINK")) {
-          show("Nie załadował się plik: " + (t.getAttribute("src") || t.getAttribute("href")) + " – sprawdź, czy leży w tym samym folderze co strona.");
-        } else if (!t || t === window) {
-          show("Błąd w skrypcie: " + e.message + (e.filename ? " [" + e.filename.split("/").pop().split("?")[0] + ":" + e.lineno + "]" : ""));
-        }
-      }, true);
-    })();
-  </script>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <main>
@@ -60,7 +37,7 @@
     </div>
 
     <h2 data-i18n="timer.add.h">dodaj timer</h2>
-    <form id="add-form" class="row" onsubmit="return false">
+    <form id="add-form" class="row">
       <label class="field">
         <span class="small muted" data-i18n="timer.min">min</span>
         <input id="in-min" type="number" min="0" value="5" inputmode="numeric">
@@ -95,16 +72,20 @@
     <h2 data-i18n="sound.h">dźwięk sygnału</h2>
     <div class="row">
       <label class="field grow">
+        <span class="small muted" data-i18n="sound.select">dźwięk (po wybraniu gra od razu)</span>
+        <select id="sound-select"></select>
+      </label>
+      <button class="btn ghost" id="sound-play" type="button">Odtwórz</button>
+    </div>
+    <div class="row">
+      <label class="field grow">
         <span class="small muted"><span data-i18n="sound.length">długość</span>: <span id="len-label">10 s</span></span>
-        <input id="len-range" type="range" min="1" max="10" step="1" value="10">
+        <input id="len-range" type="range" min="1" max="30" step="1" value="10">
       </label>
       <label class="field grow">
         <span class="small muted"><span data-i18n="sound.volume">głośność</span>: <span id="vol-label">80%</span></span>
         <input id="vol-range" type="range" min="0" max="100" step="1" value="80">
       </label>
-    </div>
-    <div class="row">
-      <button class="btn ghost" id="sound-play" type="button">Odtwórz</button>
       <button class="btn ghost" id="mute-btn" type="button" aria-pressed="false">Wycisz</button>
     </div>
     <div class="bar sound-bar" aria-hidden="true"><div class="bar-fill" id="sound-fill"></div></div>
@@ -136,7 +117,9 @@
     </div>
   </div>
 
-  <script src="script.js?v=3"></script>
-  <script src="timer.js?v=3"></script>
+  <script src="i18n.js"></script>
+  <script src="script.js"></script>
+  <script src="fullscreen.js"></script>
+  <script src="timer.js"></script>
 </body>
 </html>

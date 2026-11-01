@@ -90,18 +90,6 @@ footer {
   border-radius: 6px;
   border: 1px solid var(--border);
 }
-/* gdy zdjęcia nie ma w folderze, zamiast uszkodzonego obrazka pokazuje się podpowiedź */
-.photo-missing { display: none; }
-.photo.missing img { display: none; }
-.photo.missing .photo-missing {
-  display: block;
-  padding: 48px 16px;
-  text-align: center;
-  font-size: 0.85rem;
-  color: var(--muted);
-  border: 1px dashed var(--border);
-  border-radius: 6px;
-}
 .photo figcaption {
   margin-top: 6px;
   font-size: 0.75rem;

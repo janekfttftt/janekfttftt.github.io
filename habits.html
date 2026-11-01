@@ -4,7 +4,30 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Nawyki – Janek</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=3">
+  <script>
+    // Diagnostyka: gdy plik się nie wczyta albo skrypt się wysypie, na górze pojawi się czerwony pasek z opisem.
+    (function () {
+      function show(msg) {
+        function add() {
+          var d = document.createElement("div");
+          d.style.cssText = "position:fixed;left:0;right:0;top:0;z-index:2000;background:#5a1d1d;color:#fff;padding:10px 16px;font:14px/1.4 monospace;cursor:pointer";
+          d.textContent = msg + " (kliknij, żeby zamknąć)";
+          d.onclick = function () { d.remove(); };
+          document.body.appendChild(d);
+        }
+        if (document.body) add(); else document.addEventListener("DOMContentLoaded", add);
+      }
+      window.addEventListener("error", function (e) {
+        var t = e.target;
+        if (t && t !== window && (t.tagName === "SCRIPT" || t.tagName === "LINK")) {
+          show("Nie załadował się plik: " + (t.getAttribute("src") || t.getAttribute("href")) + " – sprawdź, czy leży w tym samym folderze co strona.");
+        } else if (!t || t === window) {
+          show("Błąd w skrypcie: " + e.message + (e.filename ? " [" + e.filename.split("/").pop().split("?")[0] + ":" + e.lineno + "]" : ""));
+        }
+      }, true);
+    })();
+  </script>
 </head>
 <body>
   <main>
@@ -34,7 +57,7 @@
       Użyj przycisku „Eksportuj”, żeby zrobić kopię.
     </p>
 
-    <form id="add-form" class="row">
+    <form id="add-form" class="row" onsubmit="return false">
       <label class="field grow">
         <span class="small muted" data-i18n="habits.new">nowy nawyk</span>
         <input id="habit-name" type="text" maxlength="60" placeholder="np. nauka, bieganie, czytanie"
@@ -72,9 +95,7 @@
     <p class="fs-empty" id="fs-empty">Nie masz jeszcze nawyków – dodaj je na stronie.</p>
   </div>
 
-  <script src="i18n.js"></script>
-  <script src="script.js"></script>
-  <script src="fullscreen.js"></script>
-  <script src="habits.js"></script>
+  <script src="script.js?v=3"></script>
+  <script src="habits.js?v=3"></script>
 </body>
 </html>

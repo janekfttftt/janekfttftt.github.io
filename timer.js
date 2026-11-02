@@ -7,6 +7,7 @@
 
   const KEY = "timers_v1";
   const SOUND_KEY = "timer_sound_v2";
+  const HISTORY_KEY = "timer_history_v1";
   const MAX_TOTAL = 359999;  // 99:59:59 w sekundach
   const MAX_SOUND_LEN = 30;  // sekundy
   const MASTER_MAX = 0.85;   // głośność przy suwaku na 100%
@@ -249,6 +250,68 @@
   const cur = () => timers.find((t) => t.id === currentId) || null;
   const label = (t) => (t.key ? tr("desc." + t.key) : t.desc);
 
+  // Historia zapisuje wyłącznie timery ukończone do końca.
+  let history = loadHistory();
+  function loadHistory() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(HISTORY_KEY));
+      if (!Array.isArray(raw)) return [];
+      return raw.filter((x) => x && Number.isFinite(x.at) && Number.isFinite(x.seconds) && x.seconds > 0)
+        .slice(-1000).map((x) => ({ at: x.at, seconds: Math.floor(x.seconds), key: PRESET_KEYS.includes(x.key) ? x.key : "", desc: typeof x.desc === "string" ? x.desc.slice(0, 80) : "" }));
+    } catch (e) { return []; }
+  }
+  function saveHistory() {
+    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(-1000))); } catch (e) { /* brak zapisu */ }
+  }
+  function historyLabel(item) { return item.key ? tr("desc." + item.key) : item.desc || tr("timer.nodesc"); }
+  function recordCompletion(t) {
+    history.push({ at: Date.now(), seconds: t.total, key: t.key || "", desc: t.desc || "" });
+    history = history.slice(-1000);
+    saveHistory();
+    renderHistory();
+  }
+  function renderHistory() {
+    const list = $("history-list");
+    const chart = $("history-chart");
+    if (!list || !chart) return;
+    list.textContent = "";
+    chart.textContent = "";
+    const total = history.reduce((sum, item) => sum + item.seconds, 0);
+    $("history-total").textContent = fmt(total * 1000);
+    $("history-empty").hidden = history.length > 0;
+    const groups = new Map();
+    history.forEach((item) => {
+      const id = item.key || "desc:" + (item.desc || "");
+      const group = groups.get(id) || { label: historyLabel(item), seconds: 0 };
+      group.seconds += item.seconds;
+      groups.set(id, group);
+    });
+    const sorted = Array.from(groups.values()).sort((a, b) => b.seconds - a.seconds);
+    const max = sorted.length ? sorted[0].seconds : 1;
+    sorted.forEach((group) => {
+      const row = el("div", "history-bar-row");
+      const labelEl = el("span", "history-bar-label", group.label);
+      const track = el("div", "history-bar-track");
+      const fill = el("div", "history-bar-fill");
+      fill.style.width = (group.seconds / max * 100) + "%";
+      track.appendChild(fill);
+      const value = el("span", "history-bar-value", fmt(group.seconds * 1000));
+      row.append(labelEl, track, value);
+      chart.appendChild(row);
+    });
+    history.slice(-30).reverse().forEach((item) => {
+      const date = new Intl.DateTimeFormat(I18N.lang === "pl" ? "pl-PL" : "en-GB", { dateStyle: "short", timeStyle: "short" }).format(new Date(item.at));
+      list.appendChild(el("li", "history-entry", `${date} · ${historyLabel(item)} · ${fmt(item.seconds * 1000)}`));
+    });
+  }
+  const historyClear = $("history-clear");
+  if (historyClear) historyClear.addEventListener("click", () => {
+    if (!history.length || !window.confirm(tr("history.clear.confirm"))) return;
+    history = [];
+    saveHistory();
+    renderHistory();
+  });
+
   // ---------- Odliczanie ----------
   // Tykanie w Web Workerze, bo zwykłe timery bywają mocno spowalniane w karcie w tle.
   let worker = null;
@@ -287,7 +350,10 @@
 
   function advance(withSound) {
     const t = cur();
-    if (t) t.status = "done";
+    if (t) {
+      if (withSound) recordCompletion(t);
+      t.status = "done";
+    }
     const idx = timers.findIndex((x) => x.id === currentId);
     const next = timers.slice(idx + 1).find((x) => x.status === "wait");
     if (next) {
@@ -564,9 +630,14 @@
     fillSoundOptions();
     updateSoundUi();
     renderQueue();
+    renderHistory();
     update();
   });
 
   renderQueue();
+  renderHistory();
   update();
 })();
+
+
+

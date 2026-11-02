@@ -16,8 +16,7 @@
       <nav>
         <a href="index.html" data-i18n="nav.start">start</a> //
         <a href="timer.html" data-i18n="nav.timer">timer</a> //
-        <a href="habits.html" data-i18n="nav.habits">nawyki</a> //
-        <a href="benchmark.html">benchmark</a>
+        <a href="habits.html" data-i18n="nav.habits">nawyki</a>
       </nav>
       <div class="lang" role="group" data-i18n-aria="lang.aria" aria-label="język">
         <button type="button" data-lang="pl" aria-pressed="true" data-i18n="lang.pl">pol</button> //
@@ -70,6 +69,16 @@
       <button class="btn ghost" id="clear-btn" type="button" data-i18n="queue.clear">Wyczyść listę</button>
     </div>
 
+    <section class="history-section">
+      <h2 data-i18n="history.title">Historia czasu</h2>
+      <p class="muted small" data-i18n="history.note">Zapisują się tylko timery, które dobiegły końca. Pominięte i zresetowane odliczania nie są liczone.</p>
+      <p><strong data-i18n="history.total">Łącznie zapisano</strong>: <span id="history-total">0:00</span></p>
+      <div id="history-chart" class="history-chart" aria-label="Suma czasu według aktywności"></div>
+      <h3 data-i18n="history.recent">Ostatnio ukończone</h3>
+      <p id="history-empty" class="muted small" data-i18n="history.empty">Historia jest pusta. Ukończ timer, aby zacząć zbierać czas.</p>
+      <ol id="history-list" class="history-list"></ol>
+      <button class="btn ghost" id="history-clear" type="button" data-i18n="history.clear">Wyczyść historię</button>
+    </section>
     <h2 data-i18n="sound.h">dźwięk sygnału</h2>
     <div class="row">
       <label class="field grow">
@@ -124,5 +133,7 @@
   <script src="timer.js"></script>
 </body>
 </html>
+
+
 
 

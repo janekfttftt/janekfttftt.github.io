@@ -37,12 +37,6 @@ Do publikacji skopiuj **całą zawartość** rozpakowanego folderu do katalogu p
 
 Jeśli timer lub nawyki nie działają, sprawdź w narzędziach deweloperskich przeglądarki (F12 → Console), czy pojawił się błąd i czy wszystkie pliki JavaScript zostały wczytane. Błąd `I18N is not defined` zwykle oznacza brak `i18n.js` albo nieprawidłową kolejność skryptów; w tej paczce `i18n.js` jest ładowany przed skryptami korzystającymi z tłumaczeń.
 
-## Benchmark zadań
+## Historia timera
 
-Drugi plik do pobrania, `benchmark-zadania-python.zip`, zawiera niezależny program konsolowy opisany w `README-BENCHMARK.md`. Nie jest częścią strony i można go uruchamiać osobno.
-
-## Zakładka Benchmark
-
-Menu zawiera teraz zakładkę `benchmark.html`. Wpisz dane wejściowe jako JSON, umieść ciało funkcji JavaScript w polach A i B (zmienna `input` zawiera dane), wybierz liczbę powtórzeń i uruchom pomiar. Wyniki są sprawdzane pod kątem zgodności; raport podaje medianę, minimum i maksimum czasu wykonania kodu. Każda próba działa w osobnej ramce z limitem czasu, a skrypty w ramce nie mogą wykonywać żądań sieciowych według jej polityki CSP. Nie wklejaj kodu, któremu nie ufasz.
-
-Nowe pliki: `benchmark.html` to interfejs zakładki, a `benchmark-page.js` obsługuje pomiar. Menu z linkiem do zakładki jest też na stronach startowej, timera i nawyków.
+Na stronie timera ukończone odliczania zapisują się w historii przeglądarki. Wykres sumuje czas według nazwy aktywności, a lista pokazuje ostatnie ukończone odliczania. Pominięte i zresetowane timery nie są liczone. Dane można wyczyścić przyciskiem pod historią. Kolor główny strony ustawisz w `--accent` na początku `style.css` (obecnie forest green).

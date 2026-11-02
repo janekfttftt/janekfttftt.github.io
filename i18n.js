@@ -77,7 +77,13 @@
       "s.alarm": "Budzik",
       "s.sonar": "Sonar",
       "s.chime": "Kurant",
-      "timer.note": "Timery uruchamiają się jeden po drugim, a po każdym gra wybrany sygnał. Zostaw kartę ze stroną otwartą (może być w tle) – po zamknięciu karty lub uśpieniu telefonu odliczanie się zatrzyma. Lista i ustawienia dźwięku zapisują się w przeglądarce.",
+      "history.title": "Historia czasu",
+      "history.note": "Zapisują się tylko timery, które dobiegły końca. Pominięte i zresetowane odliczania nie są liczone.",
+      "history.total": "Łącznie zapisano",
+      "history.recent": "Ostatnio ukończone",
+      "history.empty": "Historia jest pusta. Ukończ timer, aby zacząć zbierać czas.",
+      "history.clear": "Wyczyść historię",
+      "history.clear.confirm": "Usunąć całą historię ukończonych timerów?",      "timer.note": "Timery uruchamiają się jeden po drugim, a po każdym gra wybrany sygnał. Zostaw kartę ze stroną otwartą (może być w tle) – po zamknięciu karty lub uśpieniu telefonu odliczanie się zatrzyma. Lista i ustawienia dźwięku zapisują się w przeglądarce.",
 
       // --- nawyki ---
       "habits.intro": "Dodaj nawyk i klikaj kwadraty dni, w których go zrobiłeś. Wszystko zapisuje się automatycznie w Twojej przeglądarce – nikt inny nie widzi Twoich nawyków.",
@@ -175,6 +181,13 @@
       "s.alarm": "Alarm clock",
       "s.sonar": "Sonar",
       "s.chime": "Chime",
+      "history.title": "Time history",
+      "history.note": "Only timers that reach zero are recorded. Skipped and reset timers are not counted.",
+      "history.total": "Total recorded",
+      "history.recent": "Recently completed",
+      "history.empty": "The history is empty. Complete a timer to start tracking time.",
+      "history.clear": "Clear history",
+      "history.clear.confirm": "Delete all completed timer history?",
       "timer.note": "Timers run one after another, and the chosen sound plays after each one. Keep the tab open (it can be in the background) – closing it or letting your phone sleep stops the countdown. The list and sound settings are saved in your browser.",
 
       // --- habits ---
@@ -258,3 +271,7 @@
 
   window.I18N = { t, plural, set, get lang() { return lang; } };
 })();
+
+
+
+

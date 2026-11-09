@@ -38,8 +38,8 @@
     <h2 data-i18n="timer.add.h">dodaj timer</h2>
     <form id="add-form" class="row">
       <label class="field">
-        <span class="small muted" data-i18n="timer.sec">sekundy (1–10)</span>
-        <input id="in-sec" type="number" min="1" max="10" step="1" value="5" required inputmode="numeric">
+        <span class="small muted" data-i18n="timer.min">czas (minuty)</span>
+        <input id="in-min" type="number" min="1" step="1" value="25" required inputmode="numeric">
       </label>
       <label class="field grow">
         <span class="small muted" data-i18n="timer.desc">opis (opcjonalnie)</span>
@@ -52,9 +52,9 @@
 
     <h2 data-i18n="presets.h">gotowe zestawy</h2>
     <div class="row presets">
-      <button class="btn ghost" id="preset-s25" type="button" data-i18n="preset.s25">+ nauka 10 s i przerwa 5 s</button>
-      <button class="btn ghost" id="preset-s50" type="button" data-i18n="preset.s50">+ nauka 8 s i przerwa 2 s</button>
-      <button class="btn ghost" id="preset-ex" type="button" data-i18n="preset.ex">+ ćwiczenia 10 s i przerwa 1 s</button>
+      <button class="btn ghost" id="preset-study" type="button" data-i18n="preset.study">+ Nauka 50 min / 10 min</button>
+      <button class="btn ghost" id="preset-short-study" type="button" data-i18n="preset.short">+ Krótka nauka 25 min / 5 min</button>
+      <button class="btn ghost" id="preset-ex" type="button" data-i18n="preset.exercise">+ Ćwiczenia 40 s / 20 s</button>
     </div>
 
     <h2 data-i18n="queue.h">kolejka</h2>

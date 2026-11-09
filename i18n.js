@@ -39,7 +39,10 @@
       "btn.reset": "Resetuj",
       "btn.fullscreen": "Pełny ekran",
       "timer.add.h": "dodaj timer",
-      "timer.min": "czas (minuty)",
+      "timer.time": "czas",
+      "timer.unit": "jednostka",
+      "timer.unit.seconds": "sekundy",
+      "timer.unit.minutes": "minuty",
       "timer.desc": "opis (opcjonalnie)",
       "timer.desc.ph": "np. nauka, przerwa",
       "timer.err.range": "Podaj dodatnią liczbę minut."
@@ -110,7 +113,10 @@
       "btn.reset": "Reset",
       "btn.fullscreen": "Full screen",
       "timer.add.h": "add a timer",
-      "timer.min": "duration (minutes)",
+      "timer.time": "duration",
+      "timer.unit": "unit",
+      "timer.unit.seconds": "seconds",
+      "timer.unit.minutes": "minutes",
       "timer.desc": "description (optional)",
       "timer.desc.ph": "e.g. study, break",
       "timer.err.range": "Enter a positive number of minutes."

@@ -38,8 +38,15 @@
     <h2 data-i18n="timer.add.h">dodaj timer</h2>
     <form id="add-form" class="row">
       <label class="field">
-        <span class="small muted" data-i18n="timer.min">czas (minuty)</span>
-        <input id="in-min" type="number" min="1" step="1" value="25" required inputmode="numeric">
+        <span class="small muted" data-i18n="timer.time">czas</span>
+        <input id="in-time" type="number" min="1" step="1" value="25" required inputmode="numeric">
+      </label>
+      <label class="field">
+        <span class="small muted" data-i18n="timer.unit">jednostka</span>
+        <select id="in-unit">
+          <option value="seconds" data-i18n="timer.unit.seconds">sekundy</option>
+          <option value="minutes" data-i18n="timer.unit.minutes">minuty</option>
+        </select>
       </label>
       <label class="field grow">
         <span class="small muted" data-i18n="timer.desc">opis (opcjonalnie)</span>
@@ -122,10 +129,10 @@
     </div>
   </div>
 
-  <script src="i18n.js"></script>
-  <script src="script.js"></script>
-  <script src="fullscreen.js"></script>
-  <script src="timer.js"></script>
+  <script src="i18n.js?v=20261109-2"></script>
+  <script src="script.js?v=20261109-2"></script>
+  <script src="fullscreen.js?v=20261109-2"></script>
+  <script src="timer.js?v=20261109-2"></script>
 </body>
 </html>
 

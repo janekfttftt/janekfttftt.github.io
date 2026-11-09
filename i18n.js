@@ -42,7 +42,7 @@
       "timer.min": "czas (minuty)",
       "timer.desc": "opis (opcjonalnie)",
       "timer.desc.ph": "np. nauka, przerwa",
-      "timer.err.range": "Podaj dodatnią liczbę minut; czas musi mieścić się w obsługiwanym zakresie."
+      "timer.err.range": "Podaj dodatnią liczbę minut."
       "presets.h": "gotowe zestawy",
       "preset.study": "+ Nauka 50 min / 10 min",
       "preset.short": "+ Krótka nauka 25 min / 5 min",
@@ -113,7 +113,7 @@
       "timer.min": "duration (minutes)",
       "timer.desc": "description (optional)",
       "timer.desc.ph": "e.g. study, break",
-      "timer.err.range": "Enter a positive number of minutes within the supported range."
+      "timer.err.range": "Enter a positive number of minutes."
       "presets.h": "quick sets",
       "preset.study": "+ Study 50 min / 10 min",
       "preset.short": "+ Short study 25 min / 5 min",

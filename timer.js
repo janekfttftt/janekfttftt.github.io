@@ -7,6 +7,7 @@
 
   const KEY = "timers_v1";
   const SOUND_KEY = "timer_sound_v2";
+  const TIME_UNIT_KEY = "timer_input_unit_v1";
   const HISTORY_KEY = "timer_history_v1";
   const MAX_SOUND_LEN = 10;  // sekundy
   const MASTER_MAX = 0.85;   // głośność przy suwaku na 100%
@@ -42,6 +43,20 @@
   const clearBtn = $("clear-btn");
   const queue = $("queue");
   const form = $("add-form");
+  const timeInput = $("in-time");
+  const unitSelect = $("in-unit");
+  let timeUnit = loadTimeUnit();
+  unitSelect.value = timeUnit;
+
+  function loadTimeUnit() {
+    try { return localStorage.getItem(TIME_UNIT_KEY) === "minutes" ? "minutes" : "seconds"; }
+    catch (e) { return "seconds"; }
+  }
+
+  unitSelect.addEventListener("change", () => {
+    timeUnit = unitSelect.value === "minutes" ? "minutes" : "seconds";
+    try { localStorage.setItem(TIME_UNIT_KEY, timeUnit); } catch (e) { /* ustawienie tylko na tę sesję */ }
+  });
 
   const soundSel = $("sound-select");
   const lenRange = $("len-range");
@@ -443,9 +458,9 @@
 
   form.addEventListener("submit", (e) => {
     e.preventDefault();
-    const minutes = Number($("in-min").value);
-    const total = minutes * 60;
-    if (!Number.isSafeInteger(minutes) || minutes < 1 || !Number.isSafeInteger(total)) {
+    const amount = Number(timeInput.value);
+    const total = amount * (timeUnit === "minutes" ? 60 : 1);
+    if (!Number.isSafeInteger(amount) || amount < 1 || !Number.isSafeInteger(total)) {
       flash(tr("timer.err.range"));
       return;
     }

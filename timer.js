@@ -8,11 +8,10 @@
   const KEY = "timers_v1";
   const SOUND_KEY = "timer_sound_v2";
   const HISTORY_KEY = "timer_history_v1";
-  const MAX_TOTAL = 10;      // maksymalna długość timera w sekundach
-  const MAX_SOUND_LEN = 30;  // sekundy
+  const MAX_SOUND_LEN = 10;  // sekundy
   const MASTER_MAX = 0.85;   // głośność przy suwaku na 100%
   const DEFAULTS = { sound: "alarm", len: 10, vol: 80, muted: false };
-  const PRESET_KEYS = ["exercise", "study", "rest"];
+  const PRESET_KEYS = ["exercise", "study", "shortStudy", "rest"];
 
   const $ = (id) => document.getElementById(id);
   const pad = (n) => String(n).padStart(2, "0");
@@ -225,12 +224,12 @@
       const raw = JSON.parse(localStorage.getItem(KEY));
       if (!Array.isArray(raw)) return [];
       return raw
-        .filter((t) => t && typeof t.total === "number" && t.total > 0)
+        .filter((t) => t && Number.isSafeInteger(t.total) && t.total > 0)
         .map((t) => ({
           id: newId(),
           desc: typeof t.desc === "string" ? t.desc.slice(0, 80) : "",
           key: PRESET_KEYS.indexOf(t.key) >= 0 ? t.key : "",
-          total: clamp(Math.floor(t.total), 1, MAX_TOTAL),
+          total: Math.floor(t.total),
           status: "wait",
         }));
     } catch (e) {
@@ -444,8 +443,9 @@
 
   form.addEventListener("submit", (e) => {
     e.preventDefault();
-    const total = Number($("in-sec").value);
-    if (!Number.isInteger(total) || total < 1 || total > MAX_TOTAL) {
+    const minutes = Number($("in-min").value);
+    const total = minutes * 60;
+    if (!Number.isSafeInteger(minutes) || minutes < 1 || !Number.isSafeInteger(total)) {
       flash(tr("timer.err.range"));
       return;
     }
@@ -467,9 +467,9 @@
     update();
   }
 
-  $("preset-s25").addEventListener("click", () => addPreset([["study", 10], ["rest", 5]]));
-  $("preset-s50").addEventListener("click", () => addPreset([["study", 8], ["rest", 2]]));
-  $("preset-ex").addEventListener("click", () => addPreset([["exercise", 10], ["rest", 1]]));
+  $("preset-study").addEventListener("click", () => addPreset([["study", 50 * 60], ["rest", 10 * 60]]));
+  $("preset-short-study").addEventListener("click", () => addPreset([["shortStudy", 25 * 60], ["rest", 5 * 60]]));
+  $("preset-ex").addEventListener("click", () => addPreset([["exercise", 40], ["rest", 20]]));
 
   queue.addEventListener("click", (e) => {
     const btn = e.target.closest(".q-remove");

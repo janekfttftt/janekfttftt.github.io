@@ -38,15 +38,12 @@
     <h2 data-i18n="timer.add.h">dodaj timer</h2>
     <form id="add-form" class="row">
       <label class="field">
-        <span class="small muted" data-i18n="timer.time">czas</span>
-        <input id="in-time" type="number" min="1" step="1" value="25" required inputmode="numeric">
+        <span class="small muted" data-i18n="timer.min">minuty</span>
+        <input id="in-min" type="number" min="0" step="1" value="0" inputmode="numeric">
       </label>
       <label class="field">
-        <span class="small muted" data-i18n="timer.unit">jednostka</span>
-        <select id="in-unit">
-          <option value="seconds" data-i18n="timer.unit.seconds">sekundy</option>
-          <option value="minutes" data-i18n="timer.unit.minutes">minuty</option>
-        </select>
+        <span class="small muted" data-i18n="timer.sec">sekundy</span>
+        <input id="in-sec" type="number" min="0" max="59" step="1" value="5" inputmode="numeric">
       </label>
       <label class="field grow">
         <span class="small muted" data-i18n="timer.desc">opis (opcjonalnie)</span>
@@ -58,11 +55,7 @@
     <p id="form-msg" class="small warn-text" role="status"></p>
 
     <h2 data-i18n="presets.h">gotowe zestawy</h2>
-    <div class="row presets">
-      <button class="btn ghost" id="preset-study" type="button" data-i18n="preset.study">+ Nauka 50 min / 10 min</button>
-      <button class="btn ghost" id="preset-short-study" type="button" data-i18n="preset.short">+ Krótka nauka 25 min / 5 min</button>
-      <button class="btn ghost" id="preset-ex" type="button" data-i18n="preset.exercise">+ Ćwiczenia 40 s / 20 s</button>
-    </div>
+    <div id="presets"></div>
 
     <h2 data-i18n="queue.h">kolejka</h2>
     <p id="queue-empty" class="muted small" data-i18n="queue.empty">Brak timerów. Dodaj pierwszy powyżej.</p>
@@ -92,7 +85,7 @@
     <div class="row">
       <label class="field grow">
         <span class="small muted"><span data-i18n="sound.length">długość</span>: <span id="len-label">10 s</span></span>
-        <input id="len-range" type="range" min="1" max="10" step="1" value="10">
+        <input id="len-range" type="range" min="1" max="30" step="1" value="10">
       </label>
       <label class="field grow">
         <span class="small muted"><span data-i18n="sound.volume">głośność</span>: <span id="vol-label">80%</span></span>
@@ -129,10 +122,10 @@
     </div>
   </div>
 
-  <script src="i18n.js?v=20261109-2"></script>
-  <script src="script.js?v=20261109-2"></script>
-  <script src="fullscreen.js?v=20261109-2"></script>
-  <script src="timer.js?v=20261109-2"></script>
+  <script src="i18n.js"></script>
+  <script src="script.js"></script>
+  <script src="fullscreen.js"></script>
+  <script src="timer.js"></script>
 </body>
 </html>
 

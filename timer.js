@@ -7,12 +7,12 @@
 
   const KEY = "timers_v1";
   const SOUND_KEY = "timer_sound_v2";
-  const TIME_UNIT_KEY = "timer_input_unit_v1";
   const HISTORY_KEY = "timer_history_v1";
-  const MAX_SOUND_LEN = 10;  // sekundy
+  const MAX_TOTAL = Math.floor(Number.MAX_SAFE_INTEGER / 1000) - Math.ceil(Date.now() / 1000);      // maksymalna długość timera w sekundach
+  const MAX_SOUND_LEN = 30;  // sekundy
   const MASTER_MAX = 0.85;   // głośność przy suwaku na 100%
   const DEFAULTS = { sound: "alarm", len: 10, vol: 80, muted: false };
-  const PRESET_KEYS = ["exercise", "study", "shortStudy", "rest"];
+  const PRESET_KEYS = ["exercise", "study", "rest"];
 
   const $ = (id) => document.getElementById(id);
   const pad = (n) => String(n).padStart(2, "0");
@@ -43,20 +43,6 @@
   const clearBtn = $("clear-btn");
   const queue = $("queue");
   const form = $("add-form");
-  const timeInput = $("in-time");
-  const unitSelect = $("in-unit");
-  let timeUnit = loadTimeUnit();
-  unitSelect.value = timeUnit;
-
-  function loadTimeUnit() {
-    try { return localStorage.getItem(TIME_UNIT_KEY) === "minutes" ? "minutes" : "seconds"; }
-    catch (e) { return "seconds"; }
-  }
-
-  unitSelect.addEventListener("change", () => {
-    timeUnit = unitSelect.value === "minutes" ? "minutes" : "seconds";
-    try { localStorage.setItem(TIME_UNIT_KEY, timeUnit); } catch (e) { /* ustawienie tylko na tę sesję */ }
-  });
 
   const soundSel = $("sound-select");
   const lenRange = $("len-range");
@@ -239,12 +225,12 @@
       const raw = JSON.parse(localStorage.getItem(KEY));
       if (!Array.isArray(raw)) return [];
       return raw
-        .filter((t) => t && Number.isSafeInteger(t.total) && t.total > 0)
+        .filter((t) => t && typeof t.total === "number" && t.total > 0)
         .map((t) => ({
           id: newId(),
           desc: typeof t.desc === "string" ? t.desc.slice(0, 80) : "",
           key: PRESET_KEYS.indexOf(t.key) >= 0 ? t.key : "",
-          total: Math.floor(t.total),
+          total: clamp(Math.floor(t.total), 1, MAX_TOTAL),
           status: "wait",
         }));
     } catch (e) {
@@ -458,9 +444,8 @@
 
   form.addEventListener("submit", (e) => {
     e.preventDefault();
-    const amount = Number(timeInput.value);
-    const total = amount * (timeUnit === "minutes" ? 60 : 1);
-    if (!Number.isSafeInteger(amount) || amount < 1 || !Number.isSafeInteger(total)) {
+    const total = readDuration($("in-min"), $("in-sec"));
+    if (!Number.isInteger(total) || total < 1 || total > MAX_TOTAL) {
       flash(tr("timer.err.range"));
       return;
     }
@@ -471,20 +456,96 @@
     update();
   });
 
-  // Gotowe zestawy – każde kliknięcie dodaje kolejną rundę na koniec kolejki.
-  // Chcesz własny zestaw? Dodaj przycisk w timer.html i wywołanie addPreset([[opis, sekundy], ...]) poniżej.
-  function addPreset(items) {
-    items.forEach((it) => {
-      timers.push({ id: newId(), desc: "", key: it[0], total: it[1], status: "wait" });
-    });
-    save();
-    renderQueue();
-    update();
+  function readDuration(minutes, seconds) {
+    return Number(minutes.value) * 60 + Number(seconds.value);
   }
 
-  $("preset-study").addEventListener("click", () => addPreset([["study", 50 * 60], ["rest", 10 * 60]]));
-  $("preset-short-study").addEventListener("click", () => addPreset([["shortStudy", 25 * 60], ["rest", 5 * 60]]));
-  $("preset-ex").addEventListener("click", () => addPreset([["exercise", 40], ["rest", 20]]));
+  const presetKey = "timer_presets_v1";
+  const defaultSets = [
+    [["study", 10], ["rest", 5]],
+    [["study", 8], ["rest", 2]],
+    [["exercise", 10], ["rest", 1]],
+  ];
+  let storedSets;
+  try { storedSets = JSON.parse(localStorage.getItem(presetKey)); } catch {}
+  const sets = defaultSets.map((pair, i) => {
+    const saved = storedSets?.[i];
+    if (Array.isArray(saved) && saved.length === 2 && saved.every(item =>
+      item && typeof item.desc === "string" && (item.key === "" || PRESET_KEYS.includes(item.key))
+      && Number.isInteger(item.total) && item.total > 0 && item.total <= MAX_TOTAL)) return saved;
+    return pair.map(([key, total]) => ({ key, total, desc: "" }));
+  });
+
+  function presetField(row, title, type, value) {
+    const field = el("label", type === "text" ? "field grow" : "field");
+    const input = el("input");
+    input.type = type;
+    input.value = value;
+    if (type === "number") {
+      input.min = "0";
+      input.inputMode = "numeric";
+    } else input.maxLength = 80;
+    field.append(el("span", "small muted", tr(title)), input);
+    row.append(field);
+    return input;
+  }
+
+  function renderPresets() {
+    const container = $("presets");
+    container.replaceChildren();
+    sets.forEach((items, index) => {
+      const card = el("div", "preset-card");
+      const caption = items.map(item => (label(item) || tr("timer.nodesc")) + " " + fmt(item.total * 1000)).join(" + ");
+      const add = el("button", "btn ghost", "+ " + caption);
+      add.type = "button";
+      add.onclick = () => {
+        timers.push(...items.map(item => ({ ...item, id: newId(), status: "wait" })));
+        save();
+        renderQueue();
+        update();
+      };
+      const details = el("details");
+      const summary = el("summary", "", tr("preset.edit"));
+      const editor = el("form");
+      const fields = items.map((item, step) => {
+        const group = el("fieldset");
+        const row = el("div", "row");
+        group.append(el("legend", "", tr("preset.stage") + " " + (step + 1)), row);
+        editor.append(group);
+        const desc = presetField(row, "timer.desc", "text", label(item));
+        const min = presetField(row, "timer.min", "number", Math.floor(item.total / 60));
+        const sec = presetField(row, "timer.sec", "number", item.total % 60);
+        sec.max = "59";
+        return { desc, min, sec };
+      });
+      const submit = el("button", "btn", tr("preset.save"));
+      submit.type = "submit";
+      editor.append(submit);
+      editor.onsubmit = event => {
+        event.preventDefault();
+        const next = [];
+        for (const [step, field] of fields.entries()) {
+          const total = readDuration(field.min, field.sec);
+          if (!Number.isInteger(total) || total < 1 || total > MAX_TOTAL) {
+            field.min.setCustomValidity(tr("timer.err.range"));
+            field.min.reportValidity();
+            field.min.setCustomValidity("");
+            return;
+          }
+          const desc = field.desc.value.trim();
+          const key = desc === label(items[step]) ? items[step].key : "";
+          next.push({ key, desc: key ? "" : desc, total });
+        }
+        sets[index] = next;
+        try { localStorage.setItem(presetKey, JSON.stringify(sets)); } catch {}
+        renderPresets();
+        container.children[index].querySelector("button").focus();
+      };
+      details.append(summary, editor);
+      card.append(add, details);
+      container.append(card);
+    });
+  }
 
   queue.addEventListener("click", (e) => {
     const btn = e.target.closest(".q-remove");
@@ -640,6 +701,7 @@
 
   // ---------- Zmiana języka ----------
   document.addEventListener("langchange", () => {
+    renderPresets();
     fillSoundOptions();
     updateSoundUi();
     renderQueue();
@@ -647,6 +709,7 @@
     update();
   });
 
+  renderPresets();
   renderQueue();
   renderHistory();
   update();

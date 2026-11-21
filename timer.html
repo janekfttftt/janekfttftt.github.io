@@ -66,7 +66,6 @@
 
     <section class="history-section">
       <h2 data-i18n="history.title">Historia czasu</h2>
-      <p class="muted small" data-i18n="history.note">Zapisują się tylko timery, które dobiegły końca. Pominięte i zresetowane odliczania nie są liczone.</p>
       <p><strong data-i18n="history.total">Łącznie zapisano</strong>: <span id="history-total">0:00</span></p>
       <div id="history-chart" class="history-chart" aria-label="Suma czasu według aktywności"></div>
       <h3 data-i18n="history.recent">Ostatnio ukończone</h3>
@@ -74,18 +73,11 @@
       <ol id="history-list" class="history-list"></ol>
       <button class="btn ghost" id="history-clear" type="button" data-i18n="history.clear">Wyczyść historię</button>
     </section>
-    <h2 data-i18n="sound.h">dźwięk sygnału</h2>
-    <div class="row">
-      <label class="field grow">
-        <span class="small muted" data-i18n="sound.select">dźwięk (po wybraniu gra od razu)</span>
-        <select id="sound-select"></select>
-      </label>
-      <button class="btn ghost" id="sound-play" type="button">Odtwórz</button>
-    </div>
+    <h2 data-i18n="sound.h">Dzwonek</h2>
     <div class="row">
       <label class="field grow">
         <span class="small muted"><span data-i18n="sound.length">długość</span>: <span id="len-label">10 s</span></span>
-        <input id="len-range" type="range" min="1" max="30" step="1" value="10">
+        <input id="len-range" type="range" min="1" max="10" step="1" value="10">
       </label>
       <label class="field grow">
         <span class="small muted"><span data-i18n="sound.volume">głośność</span>: <span id="vol-label">80%</span></span>
@@ -95,11 +87,6 @@
     </div>
     <div class="bar sound-bar" aria-hidden="true"><div class="bar-fill" id="sound-fill"></div></div>
 
-    <p class="muted small" data-i18n="timer.note">
-      Timery uruchamiają się jeden po drugim, a po każdym gra wybrany sygnał.
-      Zostaw kartę ze stroną otwartą (może być w tle) – po zamknięciu karty lub uśpieniu telefonu
-      odliczanie się zatrzyma. Lista i ustawienia dźwięku zapisują się w przeglądarce.
-    </p>
 
     <footer class="muted">© <span id="year"></span> Janek</footer>
   </main>

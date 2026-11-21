@@ -9,9 +9,9 @@
   const SOUND_KEY = "timer_sound_v2";
   const HISTORY_KEY = "timer_history_v1";
   const MAX_TOTAL = Math.floor(Number.MAX_SAFE_INTEGER / 1000) - Math.ceil(Date.now() / 1000);      // maksymalna długość timera w sekundach
-  const MAX_SOUND_LEN = 30;  // sekundy
+  const MAX_SOUND_LEN = 10;  // sekundy
   const MASTER_MAX = 0.85;   // głośność przy suwaku na 100%
-  const DEFAULTS = { sound: "alarm", len: 10, vol: 80, muted: false };
+  const DEFAULTS = { len: 10, vol: 80, muted: false };
   const PRESET_KEYS = ["exercise", "study", "rest"];
 
   const $ = (id) => document.getElementById(id);
@@ -44,48 +44,28 @@
   const queue = $("queue");
   const form = $("add-form");
 
-  const soundSel = $("sound-select");
   const lenRange = $("len-range");
   const lenLabel = $("len-label");
   const volRange = $("vol-range");
   const volLabel = $("vol-label");
   const muteBtn = $("mute-btn");
-  const playBtn = $("sound-play");
   const soundFill = $("sound-fill");
 
   // ---------- Dźwięki (syntezowane w przeglądarce, bez plików) ----------
-  // cycle(tone, t): rysuje jeden "obieg" dźwięku od czasu t; obiegi powtarzają się co `period` s,
-  // aż do wybranej długości. tone(start, czas, częstotliwość, typ, głośność, [częstotliwość_końcowa]).
   const bell = (tone, t, f, len, vol) => {
     [[1, 1, 1], [2.01, 0.5, 0.65], [2.76, 0.35, 0.45], [5.4, 0.18, 0.25]].forEach((p) => {
       tone(t, len * p[2], f * p[0], "sine", vol * p[1]);
     });
   };
 
-  const SOUNDS = [
-    { id: "pip", key: "s.pip", period: 0.5, cycle: (tone, t) => tone(t, 0.18, 880, "sine", 0.35) },
-    { id: "bell", key: "s.bell", period: 1.8, cycle: (tone, t) => bell(tone, t, 1046.5, 1.6, 0.3) },
-    { id: "gong", key: "s.gong", period: 3.2, cycle: (tone, t) => bell(tone, t, 196, 3.0, 0.45) },
-    {
-      id: "alarm", key: "s.alarm", period: 1.0,
-      cycle: (tone, t) => { for (let i = 0; i < 4; i++) tone(t + i * 0.13, 0.08, 1400, "square", 0.12); },
-    },
-    { id: "sonar", key: "s.sonar", period: 1.5, cycle: (tone, t) => tone(t, 0.7, 1300, "sine", 0.35, 900) },
-    {
-      id: "chime", key: "s.chime", period: 2.0,
-      cycle: (tone, t) => { [523.25, 659.25, 783.99].forEach((f, i) => tone(t + i * 0.25, 0.6, f, "sine", 0.3)); },
-    },
-  ];
-
   // ---------- Ustawienia dźwięku (zapisywane w przeglądarce) ----------
-  const settings = loadSettings(); // { sound, len, vol, muted }
+  const settings = loadSettings(); // { len, vol, muted }
 
   function loadSettings() {
     const s = Object.assign({}, DEFAULTS);
     try {
       const raw = JSON.parse(localStorage.getItem(SOUND_KEY));
       if (raw) {
-        if (SOUNDS.some((x) => x.id === raw.sound)) s.sound = raw.sound;
         if (Number.isFinite(raw.len)) s.len = clamp(Math.round(raw.len), 1, MAX_SOUND_LEN);
         if (Number.isFinite(raw.vol)) s.vol = clamp(Math.round(raw.vol), 0, 100);
         if (typeof raw.muted === "boolean") s.muted = raw.muted;
@@ -119,18 +99,7 @@
     volLabel.textContent = settings.muted ? tr("sound.muted") : settings.vol + "%";
     muteBtn.textContent = tr(settings.muted ? "sound.unmute" : "sound.mute");
     muteBtn.setAttribute("aria-pressed", String(settings.muted));
-    playBtn.textContent = tr(playing ? "sound.stop" : "sound.play");
     if (!playing) soundFill.style.width = "0%";
-  }
-
-  function fillSoundOptions() {
-    soundSel.textContent = "";
-    SOUNDS.forEach((s) => {
-      const o = el("option", null, tr(s.key));
-      o.value = s.id;
-      soundSel.appendChild(o);
-    });
-    soundSel.value = settings.sound;
   }
 
   function applyVolume() {
@@ -172,7 +141,6 @@
     if (!audioCtx) return;
     stopSound();
     try {
-      const snd = SOUNDS.find((s) => s.id === settings.sound) || SOUNDS[0];
       const seconds = settings.len;
       const t0 = audioCtx.currentTime + 0.03;
       const end = t0 + seconds;
@@ -196,11 +164,11 @@
         osc.connect(gain);
         gain.connect(master);
         osc.start(start);
-        osc.stop(start + dur + 0.02);
+        osc.stop(start + dur);
         nodes.push(osc);
       };
 
-      for (let t = t0; t < end; t += snd.period) snd.cycle(tone, t);
+      for (let t = t0; t < end; t += 1.8) bell(tone, t, 1046.5, 1.6, 0.3);
 
       playing = { master, nodes, timer: null, startedAt: performance.now() + 30, lenMs: seconds * 1000 };
       playing.timer = setInterval(soundProgress, 100);
@@ -460,17 +428,25 @@
     return Number(minutes.value) * 60 + Number(seconds.value);
   }
 
-  const presetKey = "timer_presets_v1";
+  const presetKey = "timer_presets_v2";
   const defaultSets = [
-    [["study", 10], ["rest", 5]],
-    [["study", 8], ["rest", 2]],
-    [["exercise", 10], ["rest", 1]],
+    [["study", 50 * 60], ["rest", 10 * 60]],
+    [["study", 25 * 60], ["rest", 5 * 60]],
+    [["exercise", 40], ["rest", 20]],
   ];
+  const previousDurations = [[10, 5], [8, 2], [10, 1]];
   let storedSets;
-  try { storedSets = JSON.parse(localStorage.getItem(presetKey)); } catch {}
+  let legacy = false;
+  try {
+    const current = localStorage.getItem(presetKey);
+    legacy = current === null;
+    storedSets = JSON.parse(current ?? localStorage.getItem("timer_presets_v1"));
+  } catch {}
   const sets = defaultSets.map((pair, i) => {
     const saved = storedSets?.[i];
-    if (Array.isArray(saved) && saved.length === 2 && saved.every(item =>
+    const wasDefault = legacy && Array.isArray(saved) && saved.length === 2 && saved.every((item, step) =>
+      item?.key === pair[step][0] && item.desc === "" && item.total === previousDurations[i][step]);
+    if (!wasDefault && Array.isArray(saved) && saved.length === 2 && saved.every(item =>
       item && typeof item.desc === "string" && (item.key === "" || PRESET_KEYS.includes(item.key))
       && Number.isInteger(item.total) && item.total > 0 && item.total <= MAX_TOTAL)) return saved;
     return pair.map(([key, total]) => ({ key, total, desc: "" }));
@@ -559,18 +535,10 @@
   });
 
   // ---------- Ustawienia dźwięku: obsługa ----------
-  fillSoundOptions();
   lenRange.max = String(MAX_SOUND_LEN);
   lenRange.value = String(settings.len);
   volRange.value = String(settings.vol);
   updateSoundUi();
-
-  // po wybraniu dźwięku od razu go odtwarzamy
-  soundSel.addEventListener("change", () => {
-    settings.sound = soundSel.value;
-    saveSettings();
-    playSound();
-  });
 
   lenRange.addEventListener("input", () => {
     settings.len = Number(lenRange.value);
@@ -593,10 +561,6 @@
     applyVolume();
   });
 
-  playBtn.addEventListener("click", () => {
-    if (playing) stopSound();
-    else playSound();
-  });
 
   // ---------- Rysowanie ----------
   function renderQueue() {
@@ -702,7 +666,6 @@
   // ---------- Zmiana języka ----------
   document.addEventListener("langchange", () => {
     renderPresets();
-    fillSoundOptions();
     updateSoundUi();
     renderQueue();
     renderHistory();

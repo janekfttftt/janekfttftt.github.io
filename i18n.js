@@ -16,8 +16,11 @@
       "nav.start": "start",
       "nav.timer": "timer",
       "lang.aria": "język",
-      "lang.pl": "pol",
-      "lang.en": "ang",
+      "theme.aria": "Motyw",
+      "theme.light": "biały",
+      "theme.dark": "czarny",
+      "lang.pl": "POL",
+      "lang.en": "ENG",
       "clock.label": "czas w warszawie",
       "h.start": "START",
       "h.timer": "TIMER",
@@ -77,8 +80,11 @@
       "nav.start": "start",
       "nav.timer": "timer",
       "lang.aria": "language",
-      "lang.pl": "pol",
-      "lang.en": "eng",
+      "theme.aria": "Theme",
+      "theme.light": "white",
+      "theme.dark": "black",
+      "lang.pl": "POL",
+      "lang.en": "ENG",
       "clock.label": "time in warsaw",
       "h.start": "START",
       "h.timer": "TIMER",
@@ -180,6 +186,27 @@
     const b = e.target.closest("button[data-lang]");
     if (b) set(b.dataset.lang);
   });
+
+  const themeButtons = document.querySelectorAll("button[data-mode]");
+  function applyTheme(mode) {
+    document.documentElement.dataset.theme = mode;
+    for (const button of themeButtons) {
+      button.setAttribute("aria-pressed", String(button.dataset.mode === mode));
+    }
+  }
+
+  let initialTheme = "dark";
+  try {
+    if (localStorage.getItem("site_theme") === "light") initialTheme = "light";
+  } catch {}
+  applyTheme(initialTheme);
+  for (const button of themeButtons) {
+    button.addEventListener("click", () => {
+      const mode = button.dataset.mode;
+      applyTheme(mode);
+      try { localStorage.setItem("site_theme", mode); } catch {}
+    });
+  }
 
   apply();
 

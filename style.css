@@ -1,4 +1,5 @@
 :root {
+  color-scheme: dark;
   --bg: #0e0e10;
   --fg: #e6e6e6;
   --muted: #8a8a93;
@@ -7,6 +8,19 @@
   --border: #2a2a30;
   --card: #16161a;
 }
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #fff;
+  --fg: #17191c;
+  --muted: #555d66;
+  --accent: #125d91;
+  --on-accent: #fff;
+  --border: #b5bdc6;
+  --card: #f5f7fa;
+}
+:root[data-theme="light"] .warn { background: #fff7dc; border-color: #ac792f; }
+:root[data-theme="light"] :is(.warn, .warn-text) { color: #765000; }
 
 * { box-sizing: border-box; }
 
